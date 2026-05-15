@@ -1,0 +1,33 @@
+// Legacy compact CC parameter file.
+{
+    // Sampling rate in Hz.
+    "sps": 1000,
+    // Sampling rate in Hz. Kept for backward compatibility.
+    "samp_freq": 1000,
+    // Minimum frequency in Hz.
+    "freqmin": 5.0,
+    // Maximum frequency in Hz.
+    "freqmax": 30.0,
+    // Frequency normalization. Options: no, rma, phase_only.
+    "freq_norm": "rma",
+    // Time normalization. Options: no, rma, one_bit.
+    "time_norm": "no",
+    // Correlation method. Options: coherency, xcorr, deconv.
+    "cc_method": "coherency",
+    // Time-domain smoothing length.
+    "smooth_N": 5,
+    // Spectral smoothing length.
+    "smoothspect_N": 5,
+    // Maximum lag in seconds.
+    "maxlag": 0.5,
+    // Channel-quality threshold.
+    "max_over_std": 1000000000,
+    // Window length in seconds.
+    "cc_len": 5,
+    // Segment minimum distance or channel selector used by the legacy implementation.
+    "cha1": 10,
+    // Segment maximum distance or channel selector used by the legacy implementation.
+    "cha2": 20,
+    // Output folder for CC results.
+    "cc_path": "./examples"
+}

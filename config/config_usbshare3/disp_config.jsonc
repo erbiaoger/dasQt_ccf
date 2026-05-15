@@ -1,0 +1,37 @@
+// Flat dispersion-analysis config consumed by DispersionConfig.
+{
+    // Minimum phase velocity in m/s.
+    "cmin": 100.0,
+    // Maximum phase velocity in m/s.
+    "cmax": 800.0,
+    // Velocity step in m/s.
+    "dc": 1.0,
+    // Minimum frequency in Hz.
+    "fmin": 3.0,
+    // Maximum frequency in Hz.
+    "fmax": 30.0,
+    // Frequency step in Hz.
+    "df": 0.1,
+    // If true, use the negative-lag/down-going branch during dispersion calculation.
+    "cc_down": false,
+    // If true, use the positive-lag/up-going branch during dispersion calculation.
+    "cc_up": false,
+    // If true, apply the saved mute-up polygon.
+    "mute_up": false,
+    // If true, apply the saved mute-down polygon.
+    "mute_down": false,
+    // Which side to use when plotting muted results. Common values: left, right.
+    "which": "right",
+    // Dispersion algorithm. Common values: park, modified-fj, fj-python, hrlrt.
+    "method": "fphase-shift",
+    // Spatial decimation factor for auto picking.
+    "skip_Nch": 5,
+    // Temporal/frequency decimation factor for auto picking.
+    "skip_Nt": 1,
+    // Normalized amplitude threshold for auto picking.
+    "threshold": 0.9,
+    // Maximum number of modes to keep.
+    "maxMode": 5,
+    // Minimum number of carriers/pixels required for a valid mode.
+    "minCarNum": 5
+}

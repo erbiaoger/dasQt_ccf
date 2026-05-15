@@ -1,0 +1,107 @@
+// Flat cross-correlation config consumed by CCConfig and by the example folder scripts.
+{
+    // Pre-filter minimum frequency in Hz.
+    "freqmin": 1.0,
+    // Pre-filter maximum frequency in Hz.
+    "freqmax": 10.0,
+    // Frequency normalization. Options: no, rma, phase_only.
+    "freq_norm": "rma",
+    // Time normalization. Options: no, rma, one_bit.
+    "time_norm": "no",
+    // Correlation method. Options: coherency, xcorr, deconv.
+    "cc_method": "coherency",
+    // Stacking method. Options: linear, pws, robust.
+    "stacking_method": "pws",
+    // Post-CC enhancement. Options: raw, tsi.
+    "cc_enhance_method": "tsi",
+    // CC numerical backend. Options: auto, cpu, torch.
+    "cc_backend": "auto",
+    // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
+    // all_mps/all_cuda keep original precision path but push more local-CC work onto the device path.
+    "cc_device": "all_cuda",
+    // How many CC chunks to process together in one backend batch.
+    "cc_batch_chunks": 4,
+    // How many local shots to correlate together per GPU CC batch in single_shot_local_cc mode.
+    // Increase this together with cc_batch_chunks to improve GPU occupancy if VRAM allows.
+    "cc_shot_batch_size": 1,
+    // CC compute dtype. Options: float32, float64.
+    "cc_dtype": "float32",
+    // Time-domain smoothing length.
+    "smooth_N": 5,
+    // Spectral smoothing length.
+    "smoothspect_N": 5,
+    // Maximum lag in seconds kept in the output gather.
+    "maxlag": 2.5,
+    // Channel-quality threshold; channels with std above this value are rejected.
+    "max_over_std": 1000000000,
+    // Window length in seconds per CC chunk.
+    "cc_len": 10.0,
+    // Segment minimum distance in meters.
+    "xmin": 500.0,
+    // Segment maximum distance in meters.
+    "xmax": 3500.0,
+    // Default save folder for CC outputs.
+    "cc_path": "./examples",
+    // How many next files to stack when using the batch-style CC action.
+    "next_data": 5,
+    // Optional band-pass minimum frequency in Hz for display/analysis workflows.
+    "bp_fmin": 3.0,
+    // Optional band-pass maximum frequency in Hz for display/analysis workflows.
+    "bp_fmax": 30.0,
+    // Enable FK-domain velocity filtering before CC if true.
+    "fk_enabled": false,
+    // FK velocity filter minimum velocity in m/s.
+    "fk_cmin": 5.0,
+    // FK velocity filter maximum velocity in m/s.
+    "fk_cmax": 1000.0,
+    // FK sign selection. Options: positive, negative, both.
+    "fk_sgn": "both",
+    // Shot position in meters for single-shot display.
+    "xshot": 0.0,
+    // Shot spacing in meters for all-shot extraction.
+    "dshot": 200.0,
+    // Receiver window length in meters.
+    "offset": 600.0,
+    // If true, show wiggle-style CC display where supported.
+    "cc_wigb": false,
+    // CC fill mode. Common values: both, positive, negative, none.
+    "cc_fill": "both",
+    // CC region selector. Common values in current GUI: All, Up, Down.
+    "cc_region": "All",
+    // Spatial downsampling factor applied before CC computation. 1 keeps the original spacing.
+    "space_downsample": 1,
+    // Temporal downsampling factor applied before CC computation. 1 keeps the original sample interval.
+    "time_downsample": 1,
+    // Display downsample step along distance/channel axis.
+    "ddx": 1,
+    // Display downsample step along lag/time axis.
+    "ddt": 1,
+    // Maximum TSI iterations.
+    "tsi_iterations": 1,
+    // Relative L1 convergence threshold for TSI early stopping.
+    "tsi_stop_rel_l1": 0.005,
+    // TSI execution mode. Options: single_shot, single_shot_local_cc, strict_sparse_all_shot.
+    "tsi_mode": "single_shot",
+    // Apply the soft velocity taper used by the current TSI workflow if true.
+    "tsi_taper_enabled": true,
+    // Minimum velocity in m/s for the TSI soft taper window.
+    "tsi_taper_vmin": 500.0,
+    // Maximum velocity in m/s for the TSI soft taper window.
+    "tsi_taper_vmax": 2500.0,
+    // Residual weight kept outside the TSI taper window. 0 removes more background, 1 disables suppression.
+    "tsi_taper_outside_scale": 0.25,
+    // Cosine shoulder width as a fraction of the taper window width.
+    "tsi_taper_shoulder_fraction": 0.25,
+    // Extra offset-lengths used to extend local CC window for TSI context in single_shot_local_cc mode.
+    // 0 keeps current behavior; 1 means local TSI context uses 2x offset channels.
+    "tsi_local_expand_offsets": 0,
+    // Number of single_shot windows processed together per batched TSI call.
+    // Increase this (e.g. 8/16/32) to improve GPU occupancy if VRAM allows.
+    "tsi_shot_batch_size": 32,
+    // Show single_shot TSI batch progress bars in terminal.
+    "tsi_show_progress": true,
+    // Sampling rate in Hz.
+    "sps": 1999.999905005102,
+    // Sampling rate in Hz. Kept for backward compatibility with legacy functions.
+    "samp_freq": 1999.999905005102
+}

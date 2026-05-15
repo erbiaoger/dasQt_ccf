@@ -1,0 +1,82 @@
+// Beamforming window defaults. Structure largely follows the legacy nested dispersion config.
+{
+    // Cross-correlation settings used to feed beamforming.
+    "CC": {
+        "filter": {
+            // Band-pass minimum frequency in Hz.
+            "fmin": 3.0,
+            // Band-pass maximum frequency in Hz.
+            "fmax": 25.0,
+            // Frequency normalization. Options: no, rma, phase_only.
+            "freq_norm": "rma",
+            // Time normalization. Options: no, rma, one_bit.
+            "time_norm": "no",
+            // Correlation method. Options: coherency, xcorr, deconv.
+            "cc_method": "coherency"
+        },
+        "smooth": {
+            // Time-domain smoothing length.
+            "smooth_N": 5,
+            // Spectral smoothing length.
+            "smoothspect_N": 5,
+            // Maximum lag in seconds.
+            "maxlag": 1.0
+        },
+        "cc": {
+            // Window length in seconds per CC chunk.
+            "CC_len": 3.0,
+            // Minimum distance in meters.
+            "Xmin": 170.0,
+            // Maximum distance in meters.
+            "Xmax": 270.0,
+            // Legacy source selector.
+            "Shot": 0,
+            // Stacking method. Options: linear, pws, robust.
+            "Smethod": "pws"
+        },
+        // How many next files to include in a batch stack.
+        "next_data": 10
+    },
+    // Dispersion/beamforming scan grid and auto-pick controls.
+    "disp": {
+        "par": {
+            // Minimum phase velocity in m/s.
+            "Cmin": 10.0,
+            // Maximum phase velocity in m/s.
+            "Cmax": 600.0,
+            // Velocity step in m/s.
+            "dc": 1.0,
+            // Minimum frequency in Hz.
+            "fmin": 1.0,
+            // Maximum frequency in Hz.
+            "fmax": 20.0,
+            // Frequency step in Hz.
+            "df": 0.1
+        },
+        "curve": {
+            // Spatial decimation factor.
+            "skip_Nch": 5,
+            // Temporal/frequency decimation factor.
+            "skip_Nt": 1,
+            // Auto-pick threshold.
+            "threshold": 0.9,
+            // Maximum number of modes to keep.
+            "maxMode": 5,
+            // Minimum carrier count for a valid mode.
+            "minCarNum": 5
+        },
+        "multiple_shot": {
+            // Shot spacing in meters.
+            "dshot": 2.0,
+            // Receiver window length in meters.
+            "offset": 100.0
+        }
+    },
+    // COG scan range reused by this window.
+    "cog": {
+        // Minimum COG offset/value.
+        "min_cog": 10.0,
+        // Maximum COG offset/value.
+        "max_cog": 40.0
+    }
+}

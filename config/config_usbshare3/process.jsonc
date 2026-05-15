@@ -1,0 +1,15 @@
+// Legacy preprocessing defaults.
+{
+    // Manual display/process scale factor.
+    "scale": 1.421,
+    // If true, estimate scale automatically instead of using the fixed scale value.
+    "auto_scale": true,
+    // Legacy boolean flag used by the old processing window.
+    "virtual": true,
+    // Legacy processing level / decomposition level parameter.
+    "level": 4,
+    // Legacy window size / smoothing parameter kept for compatibility.
+    "peace": 60,
+    // Legacy algorithm selector. Integer values are interpreted by the old processing GUI.
+    "algo": 0
+}
