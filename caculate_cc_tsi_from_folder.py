@@ -847,10 +847,13 @@ def _stack_cc_with_runtime(
     cc_params: dict[str, Any],
 ) -> np.ndarray:
     if torch is not None and isinstance(chunks, torch.Tensor):
-        if chunks.ndim != 3:
-            raise ValueError(f"chunks must be 3D (n, nt, nx), got shape={tuple(chunks.shape)}")
+        if chunks.ndim not in {3, 4}:
+            raise ValueError(f"chunks must be 3D or 4D (n, nt, nx) / (nsrc, n, nt, nx), got shape={tuple(chunks.shape)}")
         data = chunks
-        n, nt, nx = (int(v) for v in data.shape)
+        if data.ndim == 3:
+            n, nt, nx = (int(v) for v in data.shape)
+        else:
+            _nsrc, n, nt, nx = (int(v) for v in data.shape)
     else:
         data = np.asarray(chunks, dtype=float)
         if data.ndim not in {3, 4}:
