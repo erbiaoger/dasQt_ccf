@@ -1,0 +1,348 @@
+#!/usr/bin/env python3
+"""
+批量对 `batch_caculate_cc_tsi_from_subfolders.py` 生成的多文件夹 CC/TSI `.mat`
+结果执行二次叠加与出图。
+
+用途:
+1) 扫描一个输出根目录下所有包含 `cc_stack_tsi_*.mat`（或自定义 glob）的文件夹。
+2) 对每个匹配文件夹调用现有 `stack_saved_cc_mat.py`。
+3) 将每个数据文件夹的叠加结果输出到独立的目标子目录，保持与输入目录相同的相对层级。
+4) 适合处理类似:
+   `./outputs/cc_tsi_outputs_by_folder/2025-03-27/`
+   `./outputs/cc_tsi_outputs_by_folder/2025-03-28/`
+   这样的批量日目录结果。
+
+如何运行:
+1) 批量处理所有日期目录:
+   `uv run python batch_stack_saved_cc_mat.py \
+      --input-root ./outputs/cc_tsi_outputs_by_folder \
+      --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --glob "cc_stack_tsi_*.mat" \
+      --stack-size None \
+      --interval None \
+      --stack-method robust \
+      --plot-name local_cc_preview.png`
+
+2) 只预览命令，不实际执行:
+   `uv run python batch_stack_saved_cc_mat.py \
+      --input-root ./outputs/cc_tsi_outputs_by_folder \
+      --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --dry-run`
+
+3) 只处理某一天:
+   `uv run python batch_stack_saved_cc_mat.py \
+      --input-root ./outputs/cc_tsi_outputs_by_folder \
+      --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --folder-glob "2025-03-27"`
+
+4) 跳过已经生成过目标图的目录:
+   `uv run python batch_stack_saved_cc_mat.py \
+      --input-root ./outputs/cc_tsi_outputs_by_folder \
+      --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --skip-existing`
+
+参数说明:
+- `--input-root`: `batch_caculate_cc_tsi_from_subfolders.py` 的输出根目录。
+- `--output-root`: 批量叠加和图片输出根目录。
+- `--glob`: 每个输入子目录中用于查找 `.mat` 文件的模式。
+- `--folder-glob`: 限制只处理相对路径匹配该 glob 的目录。
+- `--stack-size`, `--interval`, `--stack-method`, `--plot-name`:
+  透传给 `stack_saved_cc_mat.py`。
+- `--start-index`: 透传给 `stack_saved_cc_mat.py`，控制从第几个 `.mat` 文件开始参与二次叠加。
+- `--skip-existing`: 若目标子目录中已存在 `--plot-name`，则跳过该目录。
+- `--recursive`: 递归扫描输入根目录；默认开启。
+
+输出结果:
+- 对于输入目录:
+  `<input-root>/<rel-folder>/`
+- 输出目录将写到:
+  `<output-root>/<rel-folder>/`
+- 每个输出子目录中包含:
+  - `restack_*.mat`
+  - `shots_fig/`
+  - `<plot-name>`
+"""
+
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import shlex
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Sequence
+
+
+@dataclass(frozen=True)
+class StackFolderJob:
+    input_dir: Path
+    output_dir: Path
+    matched_files: int
+    relative_dir: Path
+
+
+def discover_input_dirs(
+    *,
+    input_root: Path,
+    output_root: Path,
+    mat_glob: str,
+    recursive: bool,
+    folder_glob: str | None,
+) -> list[StackFolderJob]:
+    matched_dirs: dict[Path, int] = {}
+    pattern = f"**/{mat_glob}" if recursive else mat_glob
+    for mat_file in input_root.glob(pattern):
+        if not mat_file.is_file():
+            continue
+        parent = mat_file.parent
+        matched_dirs[parent] = matched_dirs.get(parent, 0) + 1
+
+    jobs: list[StackFolderJob] = []
+    for folder in sorted(matched_dirs):
+        relative_dir = folder.relative_to(input_root)
+        rel_text = str(relative_dir)
+        if folder_glob and not fnmatch.fnmatch(rel_text, folder_glob):
+            continue
+        jobs.append(
+            StackFolderJob(
+                input_dir=folder,
+                output_dir=output_root / relative_dir,
+                matched_files=matched_dirs[folder],
+                relative_dir=relative_dir,
+            )
+        )
+    return jobs
+
+
+def build_single_command(
+    *,
+    single_script: Path,
+    input_dir: Path,
+    output_dir: Path,
+    mat_glob: str,
+    stack_size: str,
+    interval: str,
+    start_index: int,
+    stack_method: str,
+    plot_name: str,
+    show: bool,
+    forward_args: Sequence[str],
+) -> list[str]:
+    cmd = [
+        sys.executable,
+        str(single_script),
+        "--input-dir",
+        str(input_dir),
+        "--glob",
+        str(mat_glob),
+        "--output-dir",
+        str(output_dir),
+        "--stack-size",
+        str(stack_size),
+        "--interval",
+        str(interval),
+        "--start-index",
+        str(int(start_index)),
+        "--stack-method",
+        str(stack_method),
+        "--plot-name",
+        str(plot_name),
+    ]
+    if show:
+        cmd.append("--show")
+    cmd.extend(list(forward_args))
+    return cmd
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Batch-run stack_saved_cc_mat.py for all matching output folders."
+    )
+    parser.add_argument(
+        "--input-root",
+        type=Path,
+        default=Path(__file__).resolve().parent / "outputs/cc_tsi_outputs_by_folder",
+        help="包含多个已保存 CC/TSI .mat 子目录的输入根目录。",
+    )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=Path(__file__).resolve().parent / "outputs/cc_tsi_plot_outputs_by_folder",
+        help="批量叠加结果输出根目录。",
+    )
+    parser.add_argument(
+        "--single-script",
+        type=Path,
+        default=Path(__file__).resolve().parent / "stack_saved_cc_mat.py",
+        help="单目录叠加脚本路径。",
+    )
+    parser.add_argument(
+        "--glob",
+        type=str,
+        default="cc_stack_tsi_*.mat",
+        help="每个输入子目录内匹配 .mat 文件的模式。",
+    )
+    parser.add_argument(
+        "--folder-glob",
+        type=str,
+        default=None,
+        help="按相对 input-root 的目录路径过滤，例如 '2025-03-*' 或 '2025-03-27/*'。",
+    )
+    parser.add_argument(
+        "--recursive",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="是否递归扫描 input-root。默认开启。",
+    )
+    parser.add_argument(
+        "--stack-size",
+        type=str,
+        default="None",
+        help="透传给单目录脚本；传 None 表示使用全部文件。",
+    )
+    parser.add_argument(
+        "--interval",
+        type=str,
+        default="None",
+        help="透传给单目录脚本；传 None 表示只做一组叠加。",
+    )
+    parser.add_argument(
+        "--start-index",
+        type=int,
+        default=0,
+        help="透传给单目录脚本。",
+    )
+    parser.add_argument(
+        "--stack-method",
+        type=str,
+        default="robust",
+        choices=["pws", "robust", "linear", "mean"],
+        help="透传给单目录脚本。",
+    )
+    parser.add_argument(
+        "--plot-name",
+        type=str,
+        default="local_cc_preview.png",
+        help="每个输出子目录中的汇总图文件名。",
+    )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="若目标子目录里已存在 plot-name，则跳过该目录。",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="仅打印命令，不执行。",
+    )
+    parser.add_argument(
+        "--show",
+        action="store_true",
+        help="透传给单目录脚本，保存图后同时弹窗显示。",
+    )
+    parser.add_argument(
+        "--stop-on-error",
+        action="store_true",
+        help="任一目录失败即停止。",
+    )
+    parser.add_argument(
+        "--max-folders",
+        type=int,
+        default=None,
+        help="最多处理前 N 个匹配目录。",
+    )
+
+    args, forward_args = parser.parse_known_args()
+
+    input_root = args.input_root.expanduser().resolve()
+    output_root = args.output_root.expanduser().resolve()
+    single_script = args.single_script.expanduser().resolve()
+
+    if not input_root.exists() or not input_root.is_dir():
+        raise ValueError(f"input-root not found: {input_root}")
+    if not single_script.exists() or not single_script.is_file():
+        raise ValueError(f"single-script not found: {single_script}")
+    if args.start_index < 0:
+        raise ValueError("--start-index must be >= 0")
+    if args.max_folders is not None and args.max_folders < 0:
+        raise ValueError("--max-folders must be >= 0")
+
+    jobs = discover_input_dirs(
+        input_root=input_root,
+        output_root=output_root,
+        mat_glob=args.glob,
+        recursive=bool(args.recursive),
+        folder_glob=args.folder_glob,
+    )
+    if args.max_folders is not None:
+        jobs = jobs[: args.max_folders]
+
+    print(f"[INFO] input root   : {input_root}")
+    print(f"[INFO] output root  : {output_root}")
+    print(f"[INFO] single script: {single_script}")
+    print(f"[INFO] mat glob     : {args.glob}")
+    print(f"[INFO] recursive    : {bool(args.recursive)}")
+    print(f"[INFO] folder glob  : {args.folder_glob}")
+    print(f"[INFO] matched dirs : {len(jobs)}")
+    if forward_args:
+        print(f"[INFO] forwarded args: {' '.join(shlex.quote(a) for a in forward_args)}")
+
+    if not jobs:
+        print("[DONE] no folder contains matched MAT files.")
+        return
+
+    success = 0
+    failed = 0
+    skipped = 0
+
+    for idx, job in enumerate(jobs, start=1):
+        target_plot = job.output_dir / args.plot_name
+        if args.skip_existing and target_plot.exists():
+            skipped += 1
+            print(f"[SKIP] {job.relative_dir} -> existing plot: {target_plot}")
+            continue
+
+        cmd = build_single_command(
+            single_script=single_script,
+            input_dir=job.input_dir,
+            output_dir=job.output_dir,
+            mat_glob=args.glob,
+            stack_size=args.stack_size,
+            interval=args.interval,
+            start_index=args.start_index,
+            stack_method=args.stack_method,
+            plot_name=args.plot_name,
+            show=bool(args.show),
+            forward_args=forward_args,
+        )
+        print(
+            f"[{idx}/{len(jobs)}] folder={job.relative_dir} matched_files={job.matched_files} "
+            f"-> output={job.output_dir}"
+        )
+        print(f"[CMD] {' '.join(shlex.quote(x) for x in cmd)}")
+
+        if args.dry_run:
+            skipped += 1
+            continue
+
+        job.output_dir.mkdir(parents=True, exist_ok=True)
+        proc = subprocess.run(cmd, check=False)
+        if proc.returncode == 0:
+            success += 1
+            print(f"[OK] {job.relative_dir}")
+        else:
+            failed += 1
+            print(f"[FAILED] {job.relative_dir}, returncode={proc.returncode}")
+            if args.stop_on_error:
+                break
+
+    print(
+        f"[DONE] total={len(jobs)} success={success} failed={failed} "
+        f"dryrun_or_skipped={skipped}"
+    )
+
+
+if __name__ == "__main__":
+    main()

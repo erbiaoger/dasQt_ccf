@@ -141,7 +141,16 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
 uv run python stack_saved_cc_mat.py \
   --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-25 \
   --glob "cc_stack_tsi_*.mat" \
-  --output-dir ./cc_tsi_plot_outputs_ChangBai \
+  --output-dir ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --stack-size None \
+  --interval None \
+  --stack-method robust \
+  --plot-name local_cc_preview.png
+
+uv run python batch_stack_saved_cc_mat.py \
+  --input-root ./outputs/cc_tsi_outputs_by_folder \
+  --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --glob "cc_stack_tsi_*.mat" \
   --stack-size None \
   --interval None \
   --stack-method robust \

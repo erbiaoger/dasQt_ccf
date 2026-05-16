@@ -1,6 +1,7 @@
 .claude/*
 
 outputs/*
+!outputs/.gitkeep
 
 .vscode/*
 
