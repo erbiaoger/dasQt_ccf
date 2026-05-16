@@ -126,10 +126,10 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
 
 uv run python batch_caculate_cc_tsi_from_subfolders.py \
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
-  --output-root ./cc_tsi_outputs/cc_tsi_outputs_by_folder \
+  --output-root ./outputs/cc_tsi_outputs_by_folder \
   --config ./config/config_ChangBai/cc_config.jsonc \
   --save-every 30 \
-  --date-start 2025-03-25 \
+  --date-start 2025-03-27 \
   --time-start 08:00 \
   --time-end 18:00 \
   --tsi-progress \
@@ -139,10 +139,18 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
 
 
 uv run python stack_saved_cc_mat.py \
-  --input-dir cc_tsi_outputs_by_folder/2025-03-23 \
+  --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-25 \
   --glob "cc_stack_tsi_*.mat" \
   --output-dir ./cc_tsi_plot_outputs_ChangBai \
   --stack-size None \
   --interval None \
   --stack-method robust \
   --plot-name local_cc_preview.png
+
+
+
+
+
+
+
+source /csim2/zhangzhiyu/MyProjects/DAS_Procee_Show/.venv/bin/activate
