@@ -9,6 +9,8 @@
 - [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/stack_saved_cc_mat.py): 对单个输出目录中的多个 `cc_stack*.mat` 做二次叠加、出图、保存 `restack*.mat`。
 - [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加。
 - [config](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config): 各数据源的配置目录。
+- [tools](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换和索引构建。
+- [notebooks](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks): Notebook 目录，用于磁盘后端数据集构建与探索分析。
 - [outputs](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/outputs): 示例输出根目录。
 - [run.sh](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/run.sh): 常用命令示例。
 
@@ -16,6 +18,8 @@
 
 1. 先用 [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py) 生成每个日期/子目录的 `cc_stack_tsi_*.mat`。
 2. 再用 [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py) 批量对这些目录做二次叠加。
+3. 再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 把每个日期目录里的 `.mat` 汇总成磁盘后端 HDF5 立方体。
+4. 最后用 [build-disk-backed-changbai-cc-cube.ipynb](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks/build-disk-backed-changbai-cc-cube.ipynb) 只读 HDF5 并做绘图分析。
 
 ## ChangBai 示例
 
@@ -50,6 +54,15 @@ uv run python batch_stack_saved_cc_mat.py \
 
 - 输入: `./outputs/cc_tsi_outputs_by_folder/2025-03-27`
 - 输出: `./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27`
+
+再转换成 HDF5:
+
+```bash
+uv run python tools/build_cc_h5_cube.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-h5 ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_by_date.h5 \
+  --meta-csv ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_index.csv
+```
 
 ## Python 环境
 

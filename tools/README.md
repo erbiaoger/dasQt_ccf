@@ -1,0 +1,23 @@
+# tools
+
+本目录放 `03_ccf` 的辅助 CLI 工具，主要负责离线整理、格式转换和数据索引构建。
+
+## 文件说明
+
+- [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py): 扫描 `cc_tsi_plot_outputs_ChangBai` 一类目录，把每个日期目录中的一个 `.mat` 汇总成 HDF5 4D 立方体，并输出索引 CSV。
+
+## 使用方式
+
+```bash
+uv run python tools/build_cc_h5_cube.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-h5 ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_by_date.h5 \
+  --meta-csv ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_index.csv
+```
+
+如果后续主要读取 `[:, ishot, :, :]`，保持默认 `--chunk-mode single_shot_across_dates` 即可。
+
+## 输出结果
+
+- `cc_cube_by_date.h5`: HDF5 磁盘后端 4D 数据立方体
+- `cc_cube_index.csv`: 每个 date 样本对应的源目录、源文件、shape 和候选文件列表
