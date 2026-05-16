@@ -5,9 +5,9 @@
         // Preprocessing options applied before correlation.
         "filter": {
             // Band-pass minimum frequency in Hz.
-            "fmin": 4.0,
+            "fmin": 3.0,
             // Band-pass maximum frequency in Hz.
-            "fmax": 10.0,
+            "fmax": 30.0,
             // Frequency normalization. Options: no, rma, phase_only.
             "freq_norm": "phase_only",
             // Time normalization. Options: no, rma, one_bit.
@@ -47,7 +47,7 @@
         // Frequency/velocity scan grid.
         "par": {
             // Minimum phase velocity in m/s.
-            "Cmin": 10.0,
+            "Cmin": 100.0,
             // Maximum phase velocity in m/s.
             "Cmax": 800.0,
             // Velocity step in m/s.

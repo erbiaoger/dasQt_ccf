@@ -113,7 +113,16 @@ uv run python caculate_cc_tsi_from_folder.py \
   --start-index 0 \
   --end-index 1438
 
+uv run python stack_saved_cc_mat.py \
+  --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-25 \
+  --glob "cc_stack_tsi_*.mat" \
+  --output-dir ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --stack-size None \
+  --interval None \
+  --stack-method robust \
+  --plot-name local_cc_preview.png
 
+### 多文件夹
 uv run python batch_caculate_cc_tsi_from_subfolders.py \
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
   --output-root ./cc_tsi_outputs_by_folder \
@@ -137,15 +146,7 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
 
 
 
-
-uv run python stack_saved_cc_mat.py \
-  --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-25 \
-  --glob "cc_stack_tsi_*.mat" \
-  --output-dir ./outputs/cc_tsi_plot_outputs_ChangBai \
-  --stack-size None \
-  --interval None \
-  --stack-method robust \
-  --plot-name local_cc_preview.png
+### 多文件夹叠加
 
 uv run python batch_stack_saved_cc_mat.py \
   --input-root ./outputs/cc_tsi_outputs_by_folder \
@@ -157,9 +158,29 @@ uv run python batch_stack_saved_cc_mat.py \
   --plot-name local_cc_preview.png
 
 
+uv run python tools/build_cc_h5_cube.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-h5 ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_by_date.h5 \
+  --meta-csv ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_index.csv
 
 
 
+### 提频散
+直接用这个命令：
 
+uv run python tools/extract_dispersion_from_cc_mat.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-root ./outputs/dispersion_outputs_ChangBai \
+  --config ./config/config_ChangBai/dispersion.jsonc
+
+
+如果只想先做部分炮：
+
+uv run python tools/extract_dispersion_from_cc_mat.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-root ./outputs/dispersion_outputs_ChangBai \
+  --config ./config/config_ChangBai/dispersion.jsonc \
+  --shot-stop 20 \
+  --save-npz
 
 source /csim2/zhangzhiyu/MyProjects/DAS_Procee_Show/.venv/bin/activate

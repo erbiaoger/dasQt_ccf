@@ -20,6 +20,7 @@
 2. 再用 [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py) 批量对这些目录做二次叠加。
 3. 再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 把每个日期目录里的 `.mat` 汇总成磁盘后端 HDF5 立方体。
 4. 最后用 [build-disk-backed-changbai-cc-cube.ipynb](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks/build-disk-backed-changbai-cc-cube.ipynb) 只读 HDF5 并做绘图分析。
+5. 如果需要逐炮频散图，使用 [extract_dispersion_from_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/extract_dispersion_from_cc_mat.py) 从每个 `.mat` 直接批量提取并保存。
 
 ## ChangBai 示例
 
@@ -62,6 +63,15 @@ uv run python tools/build_cc_h5_cube.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-h5 ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_by_date.h5 \
   --meta-csv ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_index.csv
+```
+
+批量提取所有炮的频散图:
+
+```bash
+uv run python tools/extract_dispersion_from_cc_mat.py \
+  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-root ./outputs/dispersion_outputs_ChangBai \
+  --config ./config/config_ChangBai/dispersion.jsonc
 ```
 
 ## Python 环境

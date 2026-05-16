@@ -1,0 +1,480 @@
+#!/usr/bin/env python3
+"""
+批量读取按子目录组织的 CC `.mat` 文件，逐炮提取频散图并保存绘图结果。
+
+用途:
+1) 递归扫描输入根目录下所有包含 `.mat` 文件的子目录。
+2) 逐个 `.mat` 读取 `data/dt/dx/dshot`，支持 `data` 为 `(nshot, nt, noffset)` 或 `(nt, noffset)`。
+3) 对每一炮调用 dasQt 现有的 `compute_dispersion_image()` 提取频散能量图。
+4) 将每一炮的频散图保存为 PNG；可选把整份 `.mat` 的频散数据立方保存为 `npz`。
+5) 输出目录保持与输入目录相同的相对层级，便于按日期/批次回查。
+
+适用场景:
+- 输入目录类似 `outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27/*.mat`
+- 每个 `.mat` 中存的是多炮 CC gather，希望批量得到所有炮的频散图。
+
+运行方式:
+1) 使用 ChangBai 频散参数批量处理全部子目录:
+   `uv run python tools/extract_dispersion_from_cc_mat.py \
+      --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --output-root ./outputs/dispersion_outputs_ChangBai \
+      --config ./config/config_ChangBai/dispersion.jsonc`
+
+2) 只处理前 20 炮，并额外保存频散数据立方:
+   `uv run python tools/extract_dispersion_from_cc_mat.py \
+      --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --output-root ./outputs/dispersion_outputs_ChangBai \
+      --config ./config/config_ChangBai/dispersion.jsonc \
+      --shot-stop 20 \
+      --save-npz`
+
+3) 只预览命中的目录和文件，不实际计算:
+   `uv run python tools/extract_dispersion_from_cc_mat.py \
+      --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --dry-run`
+
+输入:
+- 一个目录树；每个有效子目录至少有一个匹配 `--glob` 的 `.mat` 文件。
+- 配置文件可以是:
+  - legacy `dispersion.jsonc`，读取 `disp.par`
+  - flat `disp_config.jsonc`，读取扁平的 `cmin/cmax/dc/fmin/fmax/df/method`
+
+输出:
+- 每个输入 `.mat` 对应一个输出目录:
+  `<output-root>/<相对输入目录>/<mat文件名去后缀>/`
+- 该目录下包含:
+  - `shot_0000_dispersion.png` 等每炮频散图
+  - 可选 `dispersion_cube.npz`，包含 `images/f/c/shot_indices`
+- `<output-root>/dispersion_index.csv` 汇总全部处理文件与参数
+
+参数说明:
+- `--chunk` 不涉及；本脚本直接逐炮计算，不建立 HDF5。
+- `--method` 若提供，则覆盖配置文件里的方法。
+- `--shot-start/--shot-stop` 控制处理炮号范围。
+- `--save-npz` 会把每个 `.mat` 的频散图堆叠为 `(nshot, nc, nf)` 保存，便于后续复用。
+
+结果说明:
+- 绘图字体统一使用 `Times New Roman`。
+- 若某个 `.mat` 只有二维 `data`，会按单炮处理。
+- 若某一炮频散计算失败，默认记录错误并继续后续炮；整文件不会中断。
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.io import loadmat
+
+from dasQt.core.dispersion_components.utils.dispersion_utils import (
+    compute_dispersion_image,
+)
+from dasQt.utils.config import load_jsonc_file
+
+
+plt.rcParams.update(
+    {
+        "font.family": "Times New Roman",
+        "font.sans-serif": ["Times New Roman"],
+        "font.size": 12,
+    }
+)
+
+
+@dataclass(frozen=True)
+class MatJob:
+    mat_path: Path
+    output_dir: Path
+    relative_dir: Path
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Extract per-shot dispersion images from saved CC MAT files."
+    )
+    parser.add_argument(
+        "--input-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "outputs/cc_tsi_plot_outputs_ChangBai",
+        help="输入根目录，递归扫描其下所有包含 .mat 的子目录。",
+    )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "outputs/dispersion_outputs_ChangBai",
+        help="输出根目录，保持与输入相同的相对层级。",
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "config/config_ChangBai/dispersion.jsonc",
+        help="频散参数配置文件，可为 dispersion.jsonc 或 disp_config.jsonc。",
+    )
+    parser.add_argument(
+        "--glob",
+        type=str,
+        default="*.mat",
+        help="每个子目录内匹配 .mat 文件的模式。",
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        default=None,
+        help="频散方法；若提供则覆盖配置文件中的方法。",
+    )
+    parser.add_argument(
+        "--shot-start",
+        type=int,
+        default=0,
+        help="起始炮号（包含）。",
+    )
+    parser.add_argument(
+        "--shot-stop",
+        type=int,
+        default=None,
+        help="结束炮号（不包含）。",
+    )
+    parser.add_argument(
+        "--save-npz",
+        action="store_true",
+        help="为每个 .mat 额外保存一个 dispersion_cube.npz。",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="覆盖已有输出图与 npz。",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="仅打印匹配结果，不实际计算。",
+    )
+    parser.add_argument(
+        "--max-files",
+        type=int,
+        default=None,
+        help="最多处理前 N 个匹配文件，调试用。",
+    )
+    return parser.parse_args()
+
+
+def _mat_scalar(mat: dict[str, Any], key: str, default: float | None = None) -> float | None:
+    if key not in mat:
+        return default
+    value = np.asarray(mat[key]).squeeze()
+    if np.size(value) == 0:
+        return default
+    return float(np.asarray(value).reshape(-1)[0])
+
+
+def load_cc_mat(path: Path) -> tuple[np.ndarray, float, float, float | None]:
+    mat = loadmat(path)
+    if "data" not in mat:
+        raise ValueError(f"{path.name} missing key 'data'")
+    data = np.asarray(mat["data"], dtype=float).squeeze()
+    if data.ndim == 2:
+        data = data[np.newaxis, :, :]
+    if data.ndim != 3:
+        raise ValueError(f"{path.name} invalid data shape: {data.shape}")
+
+    dt = _mat_scalar(mat, "dt")
+    dx = _mat_scalar(mat, "dx")
+    dshot = _mat_scalar(mat, "dshot", default=None)
+    if dt is None or dx is None:
+        raise ValueError(f"{path.name} missing dt/dx")
+    return np.asarray(data, dtype=np.float32), float(dt), float(dx), dshot
+
+
+def load_dispersion_scan_params(config_path: Path, method_override: str | None) -> dict[str, Any]:
+    cfg = load_jsonc_file(str(config_path))
+    if not isinstance(cfg, dict):
+        raise ValueError(f"Invalid config content: {config_path}")
+
+    # flat disp_config.jsonc
+    if "cmin" in cfg and "cmax" in cfg and "fmin" in cfg and "fmax" in cfg:
+        out = {
+            "cmin": float(cfg["cmin"]),
+            "cmax": float(cfg["cmax"]),
+            "dc": float(cfg["dc"]),
+            "fmin": float(cfg["fmin"]),
+            "fmax": float(cfg["fmax"]),
+            "df": float(cfg["df"]),
+            "method": str(cfg.get("method", "park")),
+            "mfj_kernel": str(cfg.get("mfj_kernel", "h0")),
+            "mmfj_kernel": str(cfg.get("mmfj_kernel", "h0")),
+        }
+    else:
+        disp = cfg.get("disp", {})
+        par = disp.get("par", {}) if isinstance(disp, dict) else {}
+        out = {
+            "cmin": float(par.get("Cmin", 10.0)),
+            "cmax": float(par.get("Cmax", 800.0)),
+            "dc": float(par.get("dc", 1.0)),
+            "fmin": float(par.get("fmin", 3.0)),
+            "fmax": float(par.get("fmax", 30.0)),
+            "df": float(par.get("df", 0.1)),
+            "method": str(cfg.get("method", "park")),
+            "mfj_kernel": str(cfg.get("mfj_kernel", "h0")),
+            "mmfj_kernel": str(cfg.get("mmfj_kernel", "h0")),
+        }
+
+    if out["cmax"] <= out["cmin"]:
+        raise ValueError("Require cmax > cmin")
+    if out["fmax"] <= out["fmin"]:
+        raise ValueError("Require fmax > fmin")
+    if out["dc"] <= 0 or out["df"] <= 0:
+        raise ValueError("Require dc > 0 and df > 0")
+
+    if method_override is not None:
+        out["method"] = str(method_override)
+    return out
+
+
+def discover_jobs(input_root: Path, output_root: Path, mat_glob: str) -> list[MatJob]:
+    files = sorted(p for p in input_root.rglob(mat_glob) if p.is_file())
+    jobs: list[MatJob] = []
+    for mat_path in files:
+        relative_parent = mat_path.parent.relative_to(input_root)
+        out_dir = output_root / relative_parent / mat_path.stem
+        jobs.append(MatJob(mat_path=mat_path, output_dir=out_dir, relative_dir=relative_parent))
+    return jobs
+
+
+def build_axes(params: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+    f = np.arange(
+        float(params["fmin"]),
+        float(params["fmax"]) + 0.5 * float(params["df"]),
+        float(params["df"]),
+        dtype=float,
+    )
+    c = np.arange(
+        float(params["cmin"]),
+        float(params["cmax"]) + 0.5 * float(params["dc"]),
+        float(params["dc"]),
+        dtype=float,
+    )
+    if f.size < 2:
+        raise ValueError("Frequency axis is too short. Check fmin/fmax/df.")
+    if c.size < 2:
+        raise ValueError("Velocity axis is too short. Check cmin/cmax/dc.")
+    return f, c
+
+
+def plot_dispersion_image(
+    img: np.ndarray,
+    f_axis: np.ndarray,
+    c_axis: np.ndarray,
+    out_file: Path,
+    *,
+    title: str,
+) -> None:
+    img = np.asarray(img, dtype=float)
+    vmax = float(np.percentile(img, 99.5))
+    if not np.isfinite(vmax) or vmax <= 0:
+        vmax = float(np.max(img)) if np.max(img) > 0 else 1.0
+
+    fig, ax = plt.subplots(figsize=(7.2, 5.6))
+    im = ax.imshow(
+        img,
+        extent=[float(f_axis[0]), float(f_axis[-1]), float(c_axis[0]), float(c_axis[-1])],
+        aspect="auto",
+        origin="lower",
+        cmap="jet",
+        interpolation="bilinear",
+        vmin=0.0,
+        vmax=vmax,
+    )
+    ax.set_title(title)
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("Phase Velocity (m/s)")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Normalized energy")
+    fig.tight_layout()
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_file, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
+def process_one_mat(
+    job: MatJob,
+    *,
+    params: dict[str, Any],
+    shot_start: int,
+    shot_stop: int | None,
+    save_npz: bool,
+    overwrite: bool,
+) -> tuple[int, int]:
+    data, dt, dx, dshot = load_cc_mat(job.mat_path)
+    nshot = int(data.shape[0])
+    start = max(0, int(shot_start))
+    stop = nshot if shot_stop is None else min(int(shot_stop), nshot)
+    if start >= stop:
+        return 0, 0
+
+    f, c = build_axes(params)
+    saved = 0
+    failed = 0
+    cube_list: list[np.ndarray] = []
+    shot_indices: list[int] = []
+
+    for ishot in range(start, stop):
+        out_png = job.output_dir / f"shot_{ishot:04d}_dispersion.png"
+        if out_png.exists() and not overwrite:
+            continue
+        try:
+            shot_cc = np.nan_to_num(np.asarray(data[ishot], dtype=float), nan=0.0, posinf=0.0, neginf=0.0)
+            f_out, c_out, img = compute_dispersion_image(
+                shot_cc,
+                dx,
+                dt,
+                f,
+                c,
+                str(params["method"]),
+                mfj_kernel=str(params.get("mfj_kernel", "h0")),
+                mmfj_kernel=str(params.get("mmfj_kernel", "h0")),
+            )
+            plot_dispersion_image(
+                np.asarray(img, dtype=float),
+                np.asarray(f_out, dtype=float),
+                np.asarray(c_out, dtype=float),
+                out_png,
+                title=f"{job.mat_path.stem} | Shot {ishot:04d} | method={params['method']}",
+            )
+            if save_npz:
+                cube_list.append(np.asarray(img, dtype=np.float32))
+                shot_indices.append(int(ishot))
+            saved += 1
+            print(f"[OK] {out_png}")
+        except Exception as exc:
+            failed += 1
+            print(f"[FAILED] {job.mat_path.name} shot={ishot}: {exc}")
+
+    if save_npz and cube_list:
+        npz_path = job.output_dir / "dispersion_cube.npz"
+        if overwrite or not npz_path.exists():
+            np.savez_compressed(
+                npz_path,
+                images=np.stack(cube_list, axis=0),
+                f=np.asarray(f, dtype=np.float32),
+                c=np.asarray(c, dtype=np.float32),
+                shot_indices=np.asarray(shot_indices, dtype=np.int32),
+                dt=np.float32(dt),
+                dx=np.float32(dx),
+                dshot=np.float32(dshot if dshot is not None else dx),
+            )
+            print(f"[OK] {npz_path}")
+
+    return saved, failed
+
+
+def write_index_csv(index_path: Path, rows: list[dict[str, Any]]) -> None:
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "relative_dir",
+        "mat_path",
+        "output_dir",
+        "method",
+        "fmin",
+        "fmax",
+        "df",
+        "cmin",
+        "cmax",
+        "dc",
+        "saved_png",
+        "failed_shots",
+    ]
+    with index_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def main() -> None:
+    args = parse_args()
+    input_root = args.input_root.expanduser().resolve()
+    output_root = args.output_root.expanduser().resolve()
+    config_path = args.config.expanduser().resolve()
+
+    if not input_root.exists() or not input_root.is_dir():
+        raise ValueError(f"input-root not found: {input_root}")
+    if not config_path.exists() or not config_path.is_file():
+        raise ValueError(f"config not found: {config_path}")
+    if args.shot_start < 0:
+        raise ValueError("--shot-start must be >= 0")
+    if args.shot_stop is not None and args.shot_stop < 0:
+        raise ValueError("--shot-stop must be >= 0")
+
+    params = load_dispersion_scan_params(config_path, args.method)
+    jobs = discover_jobs(input_root, output_root, args.glob)
+    if args.max_files is not None:
+        jobs = jobs[: max(0, int(args.max_files))]
+
+    print(f"[INFO] input root : {input_root}")
+    print(f"[INFO] output root: {output_root}")
+    print(f"[INFO] config     : {config_path}")
+    print(f"[INFO] method     : {params['method']}")
+    print(
+        "[INFO] scan grid  : "
+        f"f=[{params['fmin']}, {params['fmax']}], df={params['df']}; "
+        f"c=[{params['cmin']}, {params['cmax']}], dc={params['dc']}"
+    )
+    print(f"[INFO] matched mat: {len(jobs)}")
+
+    if not jobs:
+        print("[DONE] no .mat files matched.")
+        return
+
+    if args.dry_run:
+        for idx, job in enumerate(jobs, start=1):
+            print(f"[{idx}/{len(jobs)}] {job.mat_path} -> {job.output_dir}")
+        print("[DONE] dry-run only.")
+        return
+
+    index_rows: list[dict[str, Any]] = []
+    total_png = 0
+    total_failed = 0
+
+    for idx, job in enumerate(jobs, start=1):
+        print(f"[{idx}/{len(jobs)}] process {job.mat_path}")
+        saved, failed = process_one_mat(
+            job,
+            params=params,
+            shot_start=int(args.shot_start),
+            shot_stop=args.shot_stop,
+            save_npz=bool(args.save_npz),
+            overwrite=bool(args.overwrite),
+        )
+        total_png += saved
+        total_failed += failed
+        index_rows.append(
+            {
+                "relative_dir": str(job.relative_dir),
+                "mat_path": str(job.mat_path),
+                "output_dir": str(job.output_dir),
+                "method": str(params["method"]),
+                "fmin": float(params["fmin"]),
+                "fmax": float(params["fmax"]),
+                "df": float(params["df"]),
+                "cmin": float(params["cmin"]),
+                "cmax": float(params["cmax"]),
+                "dc": float(params["dc"]),
+                "saved_png": int(saved),
+                "failed_shots": int(failed),
+            }
+        )
+
+    index_csv = output_root / "dispersion_index.csv"
+    write_index_csv(index_csv, index_rows)
+    print(f"[DONE] total_png={total_png} failed_shots={total_failed}")
+    print(f"[DONE] index_csv={index_csv}")
+
+
+if __name__ == "__main__":
+    main()
