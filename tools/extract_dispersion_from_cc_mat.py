@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-批量读取按子目录组织的 CC `.mat` 文件，逐炮提取频散图并保存绘图结果。
+批量读取按子目录组织的 CC `.mat` 文件，逐炮提取频散并保存横向双图结果（CC + 频散）。
 
 用途:
-1) 递归扫描输入根目录下所有包含 `.mat` 文件的子目录。
+1) 递归扫描输入根目录下所有包含 `.mat` 文件的子目录，或只处理单个指定目录。
 2) 逐个 `.mat` 读取 `data/dt/dx/dshot`，支持 `data` 为 `(nshot, nt, noffset)` 或 `(nt, noffset)`。
 3) 对每一炮调用 dasQt 现有的 `compute_dispersion_image()` 提取频散能量图。
-4) 将每一炮的频散图保存为 PNG；可选把整份 `.mat` 的频散数据立方保存为 `npz`。
+4) 将每一炮保存为横向双图 PNG：左侧 CC，右侧频散；可选把整份 `.mat` 的频散数据立方保存为 `npz`。
 5) 输出目录保持与输入目录相同的相对层级，便于按日期/批次回查。
 
 适用场景:
 - 输入目录类似 `outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27/*.mat`
-- 每个 `.mat` 中存的是多炮 CC gather，希望批量得到所有炮的频散图。
+- 每个 `.mat` 中存的是多炮 CC gather，希望批量得到所有炮的 CC+频散对照图。
 
 运行方式:
 1) 使用 ChangBai 频散参数批量处理全部子目录:
@@ -33,8 +33,14 @@
       --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --dry-run`
 
+4) 只处理单个文件夹:
+   `uv run python tools/extract_dispersion_from_cc_mat.py \
+      --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
+      --output-root ./outputs/dispersion_outputs_ChangBai_single \
+      --config ./config/config_ChangBai/dispersion.jsonc`
+
 输入:
-- 一个目录树；每个有效子目录至少有一个匹配 `--glob` 的 `.mat` 文件。
+- 一个目录树，或单个目录；每个有效目录至少有一个匹配 `--glob` 的 `.mat` 文件。
 - 配置文件可以是:
   - legacy `dispersion.jsonc`，读取 `disp.par`
   - flat `disp_config.jsonc`，读取扁平的 `cmin/cmax/dc/fmin/fmax/df/method`
@@ -43,12 +49,13 @@
 - 每个输入 `.mat` 对应一个输出目录:
   `<output-root>/<相对输入目录>/<mat文件名去后缀>/`
 - 该目录下包含:
-  - `shot_0000_dispersion.png` 等每炮频散图
+  - `shot_0000_dispersion.png` 等每炮横向双图（左 CC，右频散）
   - 可选 `dispersion_cube.npz`，包含 `images/f/c/shot_indices`
 - `<output-root>/dispersion_index.csv` 汇总全部处理文件与参数
 
 参数说明:
 - `--chunk` 不涉及；本脚本直接逐炮计算，不建立 HDF5。
+- `--input-dir` 若提供，则只处理这一个目录，优先级高于 `--input-root`。
 - `--method` 若提供，则覆盖配置文件里的方法。
 - `--shot-start/--shot-stop` 控制处理炮号范围。
 - `--save-npz` 会把每个 `.mat` 的频散图堆叠为 `(nshot, nc, nf)` 保存，便于后续复用。
@@ -99,6 +106,12 @@ class MatJob:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Extract per-shot dispersion images from saved CC MAT files."
+    )
+    parser.add_argument(
+        "--input-dir",
+        type=Path,
+        default=None,
+        help="单目录模式：只处理这个目录中的 .mat 文件，优先级高于 --input-root。",
     )
     parser.add_argument(
         "--input-root",
@@ -238,7 +251,23 @@ def load_dispersion_scan_params(config_path: Path, method_override: str | None) 
     return out
 
 
-def discover_jobs(input_root: Path, output_root: Path, mat_glob: str) -> list[MatJob]:
+def discover_jobs(
+    *,
+    input_root: Path | None,
+    input_dir: Path | None,
+    output_root: Path,
+    mat_glob: str,
+) -> list[MatJob]:
+    if input_dir is not None:
+        files = sorted(p for p in input_dir.glob(mat_glob) if p.is_file())
+        jobs: list[MatJob] = []
+        for mat_path in files:
+            out_dir = output_root / mat_path.stem
+            jobs.append(MatJob(mat_path=mat_path, output_dir=out_dir, relative_dir=Path(".")))
+        return jobs
+
+    if input_root is None:
+        raise ValueError("input_root must not be None when input_dir is not provided")
     files = sorted(p for p in input_root.rglob(mat_glob) if p.is_file())
     jobs: list[MatJob] = []
     for mat_path in files:
@@ -268,21 +297,66 @@ def build_axes(params: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
     return f, c
 
 
-def plot_dispersion_image(
+def centers_to_edges(values: np.ndarray) -> np.ndarray:
+    centers = np.asarray(values, dtype=float).ravel()
+    if centers.size == 0:
+        return np.array([0.0, 1.0], dtype=float)
+    if centers.size == 1:
+        return np.array([centers[0] - 0.5, centers[0] + 0.5], dtype=float)
+    mids = 0.5 * (centers[:-1] + centers[1:])
+    left = centers[0] - 0.5 * (centers[1] - centers[0])
+    right = centers[-1] + 0.5 * (centers[-1] - centers[-2])
+    return np.concatenate(([left], mids, [right]))
+
+
+def plot_cc_and_dispersion(
+    shot_cc: np.ndarray,
     img: np.ndarray,
+    *,
+    shot_idx: int,
+    dx: float,
+    dt: float,
+    dshot: float | None,
     f_axis: np.ndarray,
     c_axis: np.ndarray,
     out_file: Path,
-    *,
+    mat_stem: str,
     title: str,
 ) -> None:
+    shot_cc = np.asarray(shot_cc, dtype=float)
     img = np.asarray(img, dtype=float)
+    nt, nx = shot_cc.shape
+    x_start = float(shot_idx) * float(dshot if dshot is not None else dx)
+    x_centers = x_start + np.arange(nx, dtype=float) * float(dx)
+    t_centers = (np.arange(nt, dtype=float) - float(nt // 2)) * float(dt)
+
+    cc_vmax = float(np.percentile(np.abs(shot_cc), 99.0))
+    if not np.isfinite(cc_vmax) or cc_vmax <= 0:
+        cc_vmax = 1.0
     vmax = float(np.percentile(img, 99.5))
     if not np.isfinite(vmax) or vmax <= 0:
         vmax = float(np.max(img)) if np.max(img) > 0 else 1.0
 
-    fig, ax = plt.subplots(figsize=(7.2, 5.6))
-    im = ax.imshow(
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.4), constrained_layout=True)
+
+    ax_cc = axes[0]
+    im_cc = ax_cc.pcolormesh(
+        centers_to_edges(x_centers),
+        centers_to_edges(t_centers),
+        shot_cc,
+        cmap="RdBu_r",
+        shading="auto",
+        vmin=-cc_vmax,
+        vmax=cc_vmax,
+        rasterized=False,
+    )
+    ax_cc.set_title(f"{mat_stem} | Shot {shot_idx:04d}: CC")
+    ax_cc.set_xlabel("Distance (m)")
+    ax_cc.set_ylabel("Time (s)")
+    fig.colorbar(im_cc, ax=ax_cc, fraction=0.046, pad=0.04, label="Amplitude")
+
+    ax_disp = axes[1]
+    im = ax_disp.imshow(
         img,
         extent=[float(f_axis[0]), float(f_axis[-1]), float(c_axis[0]), float(c_axis[-1])],
         aspect="auto",
@@ -292,11 +366,10 @@ def plot_dispersion_image(
         vmin=0.0,
         vmax=vmax,
     )
-    ax.set_title(title)
-    ax.set_xlabel("Frequency (Hz)")
-    ax.set_ylabel("Phase Velocity (m/s)")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Normalized energy")
-    fig.tight_layout()
+    ax_disp.set_title(title)
+    ax_disp.set_xlabel("Frequency (Hz)")
+    ax_disp.set_ylabel("Phase Velocity (m/s)")
+    fig.colorbar(im, ax=ax_disp, fraction=0.046, pad=0.04, label="Normalized energy")
     out_file.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_file, dpi=180, bbox_inches="tight")
     plt.close(fig)
@@ -340,11 +413,17 @@ def process_one_mat(
                 mfj_kernel=str(params.get("mfj_kernel", "h0")),
                 mmfj_kernel=str(params.get("mmfj_kernel", "h0")),
             )
-            plot_dispersion_image(
-                np.asarray(img, dtype=float),
-                np.asarray(f_out, dtype=float),
-                np.asarray(c_out, dtype=float),
-                out_png,
+            plot_cc_and_dispersion(
+                shot_cc=shot_cc,
+                img=np.asarray(img, dtype=float),
+                shot_idx=ishot,
+                dx=dx,
+                dt=dt,
+                dshot=dshot,
+                f_axis=np.asarray(f_out, dtype=float),
+                c_axis=np.asarray(c_out, dtype=float),
+                out_file=out_png,
+                mat_stem=job.mat_path.stem,
                 title=f"{job.mat_path.stem} | Shot {ishot:04d} | method={params['method']}",
             )
             if save_npz:
@@ -398,12 +477,18 @@ def write_index_csv(index_path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     args = parse_args()
-    input_root = args.input_root.expanduser().resolve()
+    input_dir = args.input_dir.expanduser().resolve() if args.input_dir is not None else None
+    input_root = args.input_root.expanduser().resolve() if input_dir is None else None
     output_root = args.output_root.expanduser().resolve()
     config_path = args.config.expanduser().resolve()
 
-    if not input_root.exists() or not input_root.is_dir():
-        raise ValueError(f"input-root not found: {input_root}")
+    if input_dir is not None:
+        if not input_dir.exists() or not input_dir.is_dir():
+            raise ValueError(f"input-dir not found: {input_dir}")
+    else:
+        assert input_root is not None
+        if not input_root.exists() or not input_root.is_dir():
+            raise ValueError(f"input-root not found: {input_root}")
     if not config_path.exists() or not config_path.is_file():
         raise ValueError(f"config not found: {config_path}")
     if args.shot_start < 0:
@@ -412,11 +497,19 @@ def main() -> None:
         raise ValueError("--shot-stop must be >= 0")
 
     params = load_dispersion_scan_params(config_path, args.method)
-    jobs = discover_jobs(input_root, output_root, args.glob)
+    jobs = discover_jobs(
+        input_root=input_root,
+        input_dir=input_dir,
+        output_root=output_root,
+        mat_glob=args.glob,
+    )
     if args.max_files is not None:
         jobs = jobs[: max(0, int(args.max_files))]
 
-    print(f"[INFO] input root : {input_root}")
+    if input_dir is not None:
+        print(f"[INFO] input dir  : {input_dir}")
+    else:
+        print(f"[INFO] input root : {input_root}")
     print(f"[INFO] output root: {output_root}")
     print(f"[INFO] config     : {config_path}")
     print(f"[INFO] method     : {params['method']}")
