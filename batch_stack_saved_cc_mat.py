@@ -26,6 +26,14 @@
       --jobs 8 \
       --plot-name local_cc_preview.png`
 
+5) 只做叠加保存 `.mat`，不生成任何图片:
+   `uv run python batch_stack_saved_cc_mat.py \
+      --input-root ./outputs/cc_tsi_outputs_by_folder \
+      --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+      --glob "cc_stack_tsi_*.mat" \
+      --no-save-summary-plot \
+      --no-save-shot-figures`
+
 2) 只预览命令，不实际执行:
    `uv run python batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
@@ -294,6 +302,18 @@ def main() -> None:
         help="透传给单目录脚本；指定叠加计算 dtype。",
     )
     parser.add_argument(
+        "--save-summary-plot",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="透传给单目录脚本；是否保存汇总预览图。",
+    )
+    parser.add_argument(
+        "--save-shot-figures",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="透传给单目录脚本；是否保存逐 shot 和 merged 图片。",
+    )
+    parser.add_argument(
         "--skip-existing",
         action="store_true",
         help="若目标子目录里已存在 plot-name，则跳过该目录。",
@@ -364,6 +384,8 @@ def main() -> None:
     print(f"[INFO] cc backend   : {args.cc_backend}")
     print(f"[INFO] cc device    : {args.cc_device}")
     print(f"[INFO] cc dtype     : {args.cc_dtype}")
+    print(f"[INFO] summary plot : {bool(args.save_summary_plot)}")
+    print(f"[INFO] shot figures : {bool(args.save_shot_figures)}")
     if forward_args:
         print(f"[INFO] forwarded args: {' '.join(shlex.quote(a) for a in forward_args)}")
 
@@ -401,6 +423,8 @@ def main() -> None:
                 args.cc_device,
                 "--cc-dtype",
                 args.cc_dtype,
+                "--save-summary-plot" if args.save_summary_plot else "--no-save-summary-plot",
+                "--save-shot-figures" if args.save_shot_figures else "--no-save-shot-figures",
                 *list(forward_args),
             ],
         )

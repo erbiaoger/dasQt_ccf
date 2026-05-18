@@ -40,6 +40,14 @@
       --cc-backend torch \
       --cc-device cuda \
       --cc-dtype float32`
+
+4) 只输出 `.mat`，不生成任何图片:
+   `uv run python stack_saved_cc_mat.py \
+      --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
+      --glob "cc_stack_tsi_*.mat" \
+      --stack-method robust \
+      --no-save-summary-plot \
+      --no-save-shot-figures`
 """
 
 from __future__ import annotations
@@ -476,6 +484,18 @@ def main() -> None:
         choices=["float32", "float64"],
         help="叠加计算 dtype。",
     )
+    parser.add_argument(
+        "--save-summary-plot",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="是否保存汇总预览图。默认开启。",
+    )
+    parser.add_argument(
+        "--save-shot-figures",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="是否保存逐 shot 图片和 merged-by-position 图片。默认开启。",
+    )
     parser.add_argument("--show", action="store_true", help="保存图后同时弹窗显示。")
     parser.add_argument(
         "--plot-name", type=str, default="restack_preview.png", help="汇总图文件名。"
@@ -516,6 +536,8 @@ def main() -> None:
     print(f"[INFO] cc backend  : {args.cc_backend}")
     print(f"[INFO] cc device   : {args.cc_device}")
     print(f"[INFO] cc dtype    : {args.cc_dtype}")
+    print(f"[INFO] summary plot: {bool(args.save_summary_plot)}")
+    print(f"[INFO] shot figures: {bool(args.save_shot_figures)}")
 
     saved_items: list[dict[str, Any]] = []
     for i, (w_start, w_end, w_files) in enumerate(windows, start=1):
@@ -582,40 +604,41 @@ def main() -> None:
         )
         print(f"[OK] saved: {out_mat.name}")
 
-        # Save shot-wise figures and merged-by-position figure
-        shots_root = output_dir / "shots_fig"
-        shots_dir = shots_root / out_mat.stem
-        x_origin = float(meta_ref.get("xmin", 0.0)) if meta_ref else 0.0
-        save_all_shot_figures(
-            stack_data,
-            dt=float(dt_ref),
-            dx=float(dx_ref),
-            shots_dir=shots_dir,
-            prefix=out_mat.stem,
-            x_origin=x_origin,
-            dshot=dshot_ref,
-        )
-        merged_png = shots_dir / f"{out_mat.stem}_merged_by_position.png"
-        save_merged_shot_figure(
-            stack_data,
-            dt=float(dt_ref),
-            dx=float(dx_ref),
-            out_file=merged_png,
-            x_origin=x_origin,
-            dshot=dshot_ref,
-            title=f"{out_mat.stem} merged CC by shot positions",
-        )
-        print(f"[OK] shots figs: {shots_dir}")
+        if args.save_shot_figures:
+            shots_root = output_dir / "shots_fig"
+            shots_dir = shots_root / out_mat.stem
+            x_origin = float(meta_ref.get("xmin", 0.0)) if meta_ref else 0.0
+            save_all_shot_figures(
+                stack_data,
+                dt=float(dt_ref),
+                dx=float(dx_ref),
+                shots_dir=shots_dir,
+                prefix=out_mat.stem,
+                x_origin=x_origin,
+                dshot=dshot_ref,
+            )
+            merged_png = shots_dir / f"{out_mat.stem}_merged_by_position.png"
+            save_merged_shot_figure(
+                stack_data,
+                dt=float(dt_ref),
+                dx=float(dx_ref),
+                out_file=merged_png,
+                x_origin=x_origin,
+                dshot=dshot_ref,
+                title=f"{out_mat.stem} merged CC by shot positions",
+            )
+            print(f"[OK] shots figs: {shots_dir}")
 
-    plot_file = output_dir / args.plot_name
-    plot_stacks(
-        saved_items,
-        dt=float(dt_ref),
-        dx=float(dx_ref),
-        out_file=plot_file,
-        show=bool(args.show),
-    )
-    print(f"[OK] plot : {plot_file}")
+    if args.save_summary_plot:
+        plot_file = output_dir / args.plot_name
+        plot_stacks(
+            saved_items,
+            dt=float(dt_ref),
+            dx=float(dx_ref),
+            out_file=plot_file,
+            show=bool(args.show),
+        )
+        print(f"[OK] plot : {plot_file}")
 
 
 if __name__ == "__main__":

@@ -160,6 +160,13 @@ uv run python batch_stack_saved_cc_mat.py \
   --jobs 32 \
   --plot-name local_cc_preview.png
 
+uv run python batch_stack_saved_cc_mat.py \
+  --input-root ./outputs/cc_tsi_outputs_by_folder \
+  --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --glob "cc_stack_tsi_*.mat" \
+  --no-save-summary-plot \
+  --no-save-shot-figures
+
 
 uv run python tools/build_cc_h5_cube.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
@@ -192,5 +199,14 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
   --config ./config/config_ChangBai/dispersion.jsonc \
   --shot-stop 20 \
   --save-npz
+
+
+### 绘制gif
+
+uv run python tools/create_shot_dispersion_gif.py \
+  --input-root ./outputs/dispersion_outputs_ChangBai \
+  --shot-index 179 \
+  --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif
+
 
 source /csim2/zhangzhiyu/MyProjects/DAS_Procee_Show/.venv/bin/activate
