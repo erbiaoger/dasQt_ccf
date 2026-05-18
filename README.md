@@ -7,7 +7,7 @@
 - [caculate_cc_tsi_from_folder.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/caculate_cc_tsi_from_folder.py): 对单个数据目录计算 CC / TSI，并周期性保存 `cc_stack*.mat`。
 - [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py): 扫描一个根数据目录下的所有子目录，逐个调用单目录脚本。
 - [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/stack_saved_cc_mat.py): 对单个输出目录中的多个 `cc_stack*.mat` 做二次叠加、出图、保存 `restack*.mat`。
-- [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加。
+- [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加，支持多文件夹 CPU 并行。
 - [config](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config): 各数据源的配置目录。
 - [tools](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换和索引构建。
 - [notebooks](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks): Notebook 目录，用于磁盘后端数据集构建与探索分析。
@@ -48,8 +48,25 @@ uv run python batch_stack_saved_cc_mat.py \
   --stack-size None \
   --interval None \
   --stack-method robust \
+  --cc-backend cpu \
+  --cc-device cpu \
+  --jobs 8 \
   --plot-name local_cc_preview.png
 ```
+
+这里的 `--jobs` 是“多文件夹并行度”:
+
+- `--jobs 1`: 串行逐目录叠加。
+- `--jobs 8`: 最多同时启动 8 个子目录叠加进程，适合多核 CPU。
+- 并行单位是“文件夹”，不是单个文件夹内部的 shot。
+
+这里的 `--cc-backend / --cc-device / --cc-dtype` 是“叠加计算设备”:
+
+- `--cc-backend cpu --cc-device cpu`: 强制走 CPU。
+- `--cc-backend auto --cc-device auto`: 自动选择可用设备。
+- `--cc-backend torch --cc-device mps`: 强制走 Apple Silicon GPU。
+- `--cc-backend torch --cc-device cuda`: 强制走 CUDA GPU。
+- `linear / pws / robust` 都会按你指定的后端执行；如果你请求的 torch 设备不可用，底层会发出 warning 并回退到 CPU。
 
 输出会按相同相对路径写入:
 

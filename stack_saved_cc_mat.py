@@ -2,11 +2,44 @@
 """
 读取已保存的 CC .mat 文件并做二次叠加与绘图。
 
+用途:
+1) 从单个目录读取 `cc_stack*.mat` 或 `cc_stack_tsi_*.mat`。
+2) 按给定窗口执行二次叠加，输出 `restack_*.mat`。
+3) 生成汇总预览图、逐 shot 图和按 shot 位置拼接图。
+4) 支持显式指定叠加后端，便于手动选择 CPU 或 GPU。
+
 输入文件格式兼容 save_stack_shots 的 MAT 结构：
-- data: (nshot, nt, nx) 或 (nt, nx)
-- dt: 标量
-- dx: 标量
-- dshot: 可选标量
+- `data`: `(nshot, nt, nx)` 或 `(nt, nx)`
+- `dt`: 标量
+- `dx`: 标量
+- `dshot`: 可选标量
+
+运行示例:
+1) CPU 叠加:
+   `uv run python stack_saved_cc_mat.py \
+      --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
+      --glob "cc_stack_tsi_*.mat" \
+      --stack-size None \
+      --stack-method robust \
+      --cc-backend cpu \
+      --cc-device cpu`
+
+2) 自动选择可用设备:
+   `uv run python stack_saved_cc_mat.py \
+      --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
+      --glob "cc_stack_tsi_*.mat" \
+      --stack-method pws \
+      --cc-backend auto \
+      --cc-device auto`
+
+3) 强制 torch + CUDA:
+   `uv run python stack_saved_cc_mat.py \
+      --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
+      --glob "cc_stack_tsi_*.mat" \
+      --stack-method pws \
+      --cc-backend torch \
+      --cc-device cuda \
+      --cc-dtype float32`
 """
 
 from __future__ import annotations
@@ -66,7 +99,13 @@ def centers_to_edges(values: np.ndarray) -> np.ndarray:
 
 
 def stack_cc_results(
-    cc_list: list[np.ndarray], dt: float, stacking_method: str
+    cc_list: list[np.ndarray],
+    dt: float,
+    stacking_method: str,
+    *,
+    cc_backend: str,
+    cc_device: str,
+    cc_dtype: str,
 ) -> np.ndarray:
     if stacking_method == "mean":
         return np.mean(np.asarray(cc_list), axis=0)
@@ -79,6 +118,9 @@ def stack_cc_results(
         "npts_chunk": nt,
         "nsta": nx,
         "stack_method": stacking_method,
+        "cc_backend": cc_backend,
+        "cc_device": cc_device,
+        "cc_dtype": cc_dtype,
     }
     stacked_data = DAS_module.stacking(data_array, stack_par)
     stacked_data = normalize_data(stacked_data)
@@ -413,6 +455,27 @@ def main() -> None:
         choices=["pws", "robust", "linear", "mean"],
         help="叠加方法。",
     )
+    parser.add_argument(
+        "--cc-backend",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "torch"],
+        help="叠加后端。`cpu` 强制 CPU，`torch` 强制 torch，`auto` 自动选择。",
+    )
+    parser.add_argument(
+        "--cc-device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "mps", "cuda"],
+        help="叠加设备。`cpu` 强制 CPU，`mps/cuda` 尝试 GPU，`auto` 自动选择。",
+    )
+    parser.add_argument(
+        "--cc-dtype",
+        type=str,
+        default="float32",
+        choices=["float32", "float64"],
+        help="叠加计算 dtype。",
+    )
     parser.add_argument("--show", action="store_true", help="保存图后同时弹窗显示。")
     parser.add_argument(
         "--plot-name", type=str, default="restack_preview.png", help="汇总图文件名。"
@@ -450,6 +513,9 @@ def main() -> None:
     print(f"[INFO] stack size  : {stack_size if stack_size is not None else 'ALL'}")
     print(f"[INFO] interval    : {args.interval}")
     print(f"[INFO] windows     : {len(windows)}")
+    print(f"[INFO] cc backend  : {args.cc_backend}")
+    print(f"[INFO] cc device   : {args.cc_device}")
+    print(f"[INFO] cc dtype    : {args.cc_dtype}")
 
     saved_items: list[dict[str, Any]] = []
     for i, (w_start, w_end, w_files) in enumerate(windows, start=1):
@@ -492,6 +558,9 @@ def main() -> None:
                 [cc_array[k, ishot, :, :] for k in range(cc_array.shape[0])],
                 dt=float(dt_ref),
                 stacking_method=args.stack_method,
+                cc_backend=args.cc_backend,
+                cc_device=args.cc_device,
+                cc_dtype=args.cc_dtype,
             )
 
         stack_size_label = "all" if stack_size is None else str(stack_size)

@@ -155,6 +155,9 @@ uv run python batch_stack_saved_cc_mat.py \
   --stack-size None \
   --interval None \
   --stack-method robust \
+  --cc-backend cpu \
+  --cc-device cpu \
+  --jobs 32 \
   --plot-name local_cc_preview.png
 
 
@@ -179,7 +182,7 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
   --config ./config/config_ChangBai/dispersion.jsonc \
-  --workers 8
+  --workers 32
 
 如果只想先做部分炮：
 

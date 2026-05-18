@@ -21,6 +21,9 @@
       --stack-size None \
       --interval None \
       --stack-method robust \
+      --cc-backend cpu \
+      --cc-device cpu \
+      --jobs 8 \
       --plot-name local_cc_preview.png`
 
 2) 只预览命令，不实际执行:
@@ -48,7 +51,10 @@
 - `--folder-glob`: 限制只处理相对路径匹配该 glob 的目录。
 - `--stack-size`, `--interval`, `--stack-method`, `--plot-name`:
   透传给 `stack_saved_cc_mat.py`。
+- `--cc-backend`, `--cc-device`, `--cc-dtype`:
+  透传给 `stack_saved_cc_mat.py`，用于显式指定 CPU/GPU 叠加。
 - `--start-index`: 透传给 `stack_saved_cc_mat.py`，控制从第几个 `.mat` 文件开始参与二次叠加。
+- `--jobs`: 多文件夹并行度；并行单位是子目录。
 - `--skip-existing`: 若目标子目录中已存在 `--plot-name`，则跳过该目录。
 - `--recursive`: 递归扫描输入根目录；默认开启。
 
@@ -66,6 +72,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 import fnmatch
 import shlex
 import subprocess
@@ -81,6 +88,15 @@ class StackFolderJob:
     output_dir: Path
     matched_files: int
     relative_dir: Path
+
+
+@dataclass(frozen=True)
+class JobRunResult:
+    job: StackFolderJob
+    cmd: list[str]
+    returncode: int
+    stdout: str
+    stderr: str
 
 
 def discover_input_dirs(
@@ -156,6 +172,35 @@ def build_single_command(
     return cmd
 
 
+def run_single_job(
+    *,
+    job: StackFolderJob,
+    cmd: list[str],
+) -> JobRunResult:
+    job.output_dir.mkdir(parents=True, exist_ok=True)
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    return JobRunResult(
+        job=job,
+        cmd=cmd,
+        returncode=int(proc.returncode),
+        stdout=proc.stdout or "",
+        stderr=proc.stderr or "",
+    )
+
+
+def emit_job_result(result: JobRunResult) -> None:
+    if result.stdout.strip():
+        print(f"[STDOUT] {result.job.relative_dir}")
+        print(result.stdout.rstrip())
+    if result.stderr.strip():
+        print(f"[STDERR] {result.job.relative_dir}")
+        print(result.stderr.rstrip())
+    if result.returncode == 0:
+        print(f"[OK] {result.job.relative_dir}")
+    else:
+        print(f"[FAILED] {result.job.relative_dir}, returncode={result.returncode}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Batch-run stack_saved_cc_mat.py for all matching output folders."
@@ -228,6 +273,27 @@ def main() -> None:
         help="每个输出子目录中的汇总图文件名。",
     )
     parser.add_argument(
+        "--cc-backend",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "torch"],
+        help="透传给单目录脚本；显式指定叠加后端。",
+    )
+    parser.add_argument(
+        "--cc-device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "mps", "cuda"],
+        help="透传给单目录脚本；显式指定叠加设备。",
+    )
+    parser.add_argument(
+        "--cc-dtype",
+        type=str,
+        default="float32",
+        choices=["float32", "float64"],
+        help="透传给单目录脚本；指定叠加计算 dtype。",
+    )
+    parser.add_argument(
         "--skip-existing",
         action="store_true",
         help="若目标子目录里已存在 plot-name，则跳过该目录。",
@@ -253,6 +319,12 @@ def main() -> None:
         default=None,
         help="最多处理前 N 个匹配目录。",
     )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="并行处理的文件夹数。1 表示串行；>1 表示多文件夹 CPU 并行叠加。",
+    )
 
     args, forward_args = parser.parse_known_args()
 
@@ -268,6 +340,8 @@ def main() -> None:
         raise ValueError("--start-index must be >= 0")
     if args.max_folders is not None and args.max_folders < 0:
         raise ValueError("--max-folders must be >= 0")
+    if args.jobs <= 0:
+        raise ValueError("--jobs must be > 0")
 
     jobs = discover_input_dirs(
         input_root=input_root,
@@ -286,6 +360,10 @@ def main() -> None:
     print(f"[INFO] recursive    : {bool(args.recursive)}")
     print(f"[INFO] folder glob  : {args.folder_glob}")
     print(f"[INFO] matched dirs : {len(jobs)}")
+    print(f"[INFO] parallel jobs: {args.jobs}")
+    print(f"[INFO] cc backend   : {args.cc_backend}")
+    print(f"[INFO] cc device    : {args.cc_device}")
+    print(f"[INFO] cc dtype     : {args.cc_dtype}")
     if forward_args:
         print(f"[INFO] forwarded args: {' '.join(shlex.quote(a) for a in forward_args)}")
 
@@ -296,6 +374,7 @@ def main() -> None:
     success = 0
     failed = 0
     skipped = 0
+    runnable_jobs: list[tuple[int, StackFolderJob, list[str]]] = []
 
     for idx, job in enumerate(jobs, start=1):
         target_plot = job.output_dir / args.plot_name
@@ -315,7 +394,15 @@ def main() -> None:
             stack_method=args.stack_method,
             plot_name=args.plot_name,
             show=bool(args.show),
-            forward_args=forward_args,
+            forward_args=[
+                "--cc-backend",
+                args.cc_backend,
+                "--cc-device",
+                args.cc_device,
+                "--cc-dtype",
+                args.cc_dtype,
+                *list(forward_args),
+            ],
         )
         print(
             f"[{idx}/{len(jobs)}] folder={job.relative_dir} matched_files={job.matched_files} "
@@ -326,17 +413,55 @@ def main() -> None:
         if args.dry_run:
             skipped += 1
             continue
+        runnable_jobs.append((idx, job, cmd))
 
-        job.output_dir.mkdir(parents=True, exist_ok=True)
-        proc = subprocess.run(cmd, check=False)
-        if proc.returncode == 0:
-            success += 1
-            print(f"[OK] {job.relative_dir}")
-        else:
-            failed += 1
-            print(f"[FAILED] {job.relative_dir}, returncode={proc.returncode}")
-            if args.stop_on_error:
-                break
+    if not args.dry_run and runnable_jobs:
+        max_workers = min(args.jobs, len(runnable_jobs))
+        pending_iter = iter(runnable_jobs)
+        running: dict[Future[JobRunResult], tuple[int, StackFolderJob]] = {}
+        stop_submit = False
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            while len(running) < max_workers:
+                try:
+                    next_idx, next_job, next_cmd = next(pending_iter)
+                except StopIteration:
+                    break
+                future = executor.submit(run_single_job, job=next_job, cmd=next_cmd)
+                running[future] = (next_idx, next_job)
+
+            while running:
+                done, _ = wait(running.keys(), return_when=FIRST_COMPLETED)
+                for future in done:
+                    _, done_job = running.pop(future)
+                    result = future.result()
+                    emit_job_result(result)
+                    if result.returncode == 0:
+                        success += 1
+                    else:
+                        failed += 1
+                        if args.stop_on_error:
+                            stop_submit = True
+
+                    if stop_submit:
+                        continue
+
+                    try:
+                        next_idx, next_job, next_cmd = next(pending_iter)
+                    except StopIteration:
+                        continue
+                    new_future = executor.submit(
+                        run_single_job, job=next_job, cmd=next_cmd
+                    )
+                    running[new_future] = (next_idx, next_job)
+
+            if stop_submit:
+                remaining = sum(1 for _ in pending_iter)
+                skipped += remaining
+                if remaining > 0:
+                    print(
+                        f"[STOP] stop-on-error enabled; skipped {remaining} not-yet-started folder(s)."
+                    )
 
     print(
         f"[DONE] total={len(jobs)} success={success} failed={failed} "
