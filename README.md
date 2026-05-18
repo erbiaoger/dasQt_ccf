@@ -71,8 +71,11 @@ uv run python tools/build_cc_h5_cube.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/dispersion.jsonc
+  --config ./config/config_ChangBai/dispersion.jsonc \
+  --workers 8
 ```
+
+这里的 `--workers` 是 CPU 多进程并行度，并行单位为单个 `.mat` 文件，因此可以同时跑多个日期/子目录。
 
 只处理单个文件夹:
 

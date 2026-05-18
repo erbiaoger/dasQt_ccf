@@ -18,7 +18,8 @@
    `uv run python tools/extract_dispersion_from_cc_mat.py \
       --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --output-root ./outputs/dispersion_outputs_ChangBai \
-      --config ./config/config_ChangBai/dispersion.jsonc`
+      --config ./config/config_ChangBai/dispersion.jsonc \
+      --workers 8`
 
 2) 只处理前 20 炮，并额外保存频散数据立方:
    `uv run python tools/extract_dispersion_from_cc_mat.py \
@@ -59,6 +60,7 @@
 - `--method` 若提供，则覆盖配置文件里的方法。
 - `--shot-start/--shot-stop` 控制处理炮号范围。
 - `--save-npz` 会把每个 `.mat` 的频散图堆叠为 `(nshot, nc, nf)` 保存，便于后续复用。
+- `--workers` 控制 CPU 多进程并行度，并行粒度为“每个 `.mat` 文件一个任务”，适合同时处理多个日期/子目录。
 
 结果说明:
 - 绘图字体统一使用 `Times New Roman`。
@@ -69,8 +71,10 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import csv
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any
 
@@ -101,6 +105,14 @@ class MatJob:
     mat_path: Path
     output_dir: Path
     relative_dir: Path
+
+
+@dataclass(frozen=True)
+class MatJobResult:
+    job: MatJob
+    saved_png: int
+    failed_shots: int
+    error: str | None = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -175,6 +187,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="最多处理前 N 个匹配文件，调试用。",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="CPU 并行进程数。1 表示串行；大于 1 时按 .mat 文件并行处理多个子目录。",
     )
     return parser.parse_args()
 
@@ -453,6 +471,79 @@ def process_one_mat(
     return saved, failed
 
 
+def process_one_job(
+    job: MatJob,
+    *,
+    params: dict[str, Any],
+    shot_start: int,
+    shot_stop: int | None,
+    save_npz: bool,
+    overwrite: bool,
+) -> MatJobResult:
+    try:
+        saved, failed = process_one_mat(
+            job,
+            params=params,
+            shot_start=shot_start,
+            shot_stop=shot_stop,
+            save_npz=save_npz,
+            overwrite=overwrite,
+        )
+        return MatJobResult(job=job, saved_png=saved, failed_shots=failed, error=None)
+    except Exception as exc:
+        return MatJobResult(job=job, saved_png=0, failed_shots=0, error=str(exc))
+
+
+def resolve_workers(requested_workers: int, num_jobs: int) -> int:
+    if requested_workers < 1:
+        raise ValueError("--workers must be >= 1")
+    if num_jobs <= 0:
+        return 1
+    return min(int(requested_workers), int(num_jobs), os.cpu_count() or 1)
+
+
+def run_jobs(
+    jobs: list[MatJob],
+    *,
+    params: dict[str, Any],
+    shot_start: int,
+    shot_stop: int | None,
+    save_npz: bool,
+    overwrite: bool,
+    workers: int,
+) -> list[MatJobResult]:
+    if workers <= 1 or len(jobs) <= 1:
+        return [
+            process_one_job(
+                job,
+                params=params,
+                shot_start=shot_start,
+                shot_stop=shot_stop,
+                save_npz=save_npz,
+                overwrite=overwrite,
+            )
+            for job in jobs
+        ]
+
+    results: list[MatJobResult] = []
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                process_one_job,
+                job,
+                params=params,
+                shot_start=shot_start,
+                shot_stop=shot_stop,
+                save_npz=save_npz,
+                overwrite=overwrite,
+            )
+            for job in jobs
+        ]
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+    return results
+
+
 def write_index_csv(index_path: Path, rows: list[dict[str, Any]]) -> None:
     index_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -468,6 +559,7 @@ def write_index_csv(index_path: Path, rows: list[dict[str, Any]]) -> None:
         "dc",
         "saved_png",
         "failed_shots",
+        "error",
     ]
     with index_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -505,6 +597,7 @@ def main() -> None:
     )
     if args.max_files is not None:
         jobs = jobs[: max(0, int(args.max_files))]
+    workers = resolve_workers(int(args.workers), len(jobs))
 
     if input_dir is not None:
         print(f"[INFO] input dir  : {input_dir}")
@@ -519,6 +612,7 @@ def main() -> None:
         f"c=[{params['cmin']}, {params['cmax']}], dc={params['dc']}"
     )
     print(f"[INFO] matched mat: {len(jobs)}")
+    print(f"[INFO] workers    : {workers}")
 
     if not jobs:
         print("[DONE] no .mat files matched.")
@@ -533,17 +627,42 @@ def main() -> None:
     index_rows: list[dict[str, Any]] = []
     total_png = 0
     total_failed = 0
+    results = run_jobs(
+        jobs,
+        params=params,
+        shot_start=int(args.shot_start),
+        shot_stop=args.shot_stop,
+        save_npz=bool(args.save_npz),
+        overwrite=bool(args.overwrite),
+        workers=workers,
+    )
 
-    for idx, job in enumerate(jobs, start=1):
-        print(f"[{idx}/{len(jobs)}] process {job.mat_path}")
-        saved, failed = process_one_mat(
-            job,
-            params=params,
-            shot_start=int(args.shot_start),
-            shot_stop=args.shot_stop,
-            save_npz=bool(args.save_npz),
-            overwrite=bool(args.overwrite),
-        )
+    for idx, result in enumerate(sorted(results, key=lambda item: item.job.mat_path), start=1):
+        job = result.job
+        print(f"[{idx}/{len(jobs)}] done {job.mat_path}")
+        if result.error is not None:
+            total_failed += 1
+            print(f"[FAILED] {job.mat_path}: {result.error}")
+            index_rows.append(
+                {
+                    "relative_dir": str(job.relative_dir),
+                    "mat_path": str(job.mat_path),
+                    "output_dir": str(job.output_dir),
+                    "method": str(params["method"]),
+                    "fmin": float(params["fmin"]),
+                    "fmax": float(params["fmax"]),
+                    "df": float(params["df"]),
+                    "cmin": float(params["cmin"]),
+                    "cmax": float(params["cmax"]),
+                    "dc": float(params["dc"]),
+                    "saved_png": 0,
+                    "failed_shots": 0,
+                    "error": str(result.error),
+                }
+            )
+            continue
+        saved = int(result.saved_png)
+        failed = int(result.failed_shots)
         total_png += saved
         total_failed += failed
         index_rows.append(
@@ -560,6 +679,7 @@ def main() -> None:
                 "dc": float(params["dc"]),
                 "saved_png": int(saved),
                 "failed_shots": int(failed),
+                "error": "",
             }
         )
 

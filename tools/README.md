@@ -24,8 +24,11 @@ uv run python tools/build_cc_h5_cube.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/dispersion.jsonc
+  --config ./config/config_ChangBai/dispersion.jsonc \
+  --workers 8
 ```
+
+`--workers` 表示按 `.mat` 文件级别做 CPU 多进程并行，适合同时处理多个日期/子目录；`--workers 1` 为原始串行模式。
 
 只处理单个文件夹:
 
