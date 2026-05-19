@@ -47,9 +47,9 @@
         // Frequency/velocity scan grid.
         "par": {
             // Minimum phase velocity in m/s.
-            "Cmin": 100.0,
+            "Cmin": 400.0,
             // Maximum phase velocity in m/s.
-            "Cmax": 800.0,
+            "Cmax": 1500.0,
             // Velocity step in m/s.
             "dc": 1.0,
             // Minimum dispersion frequency in Hz.
