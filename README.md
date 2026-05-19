@@ -39,6 +39,15 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
   --tsi-progress
 ```
 
+ChangBai 的推荐 GPU 配置在 `config/config_ChangBai/cc_config.jsonc` 中，默认启用:
+
+- `cc_device=all_cuda`
+- `tsi_mode=single_shot_local_cc`
+- `cc_prewhiten_segment_once=true`
+- `cc_auto_batch=true`
+
+如果需要查看瓶颈拆分，可以临时加 `--profile-stages`。输出会包含 `read/prewhiten/gpu_cc/stack_runtime/cpu_transfer/align` 等耗时；如果 CUDA 显存不足，local CC batch 会自动减半重试。
+
 再批量叠加:
 
 ```bash

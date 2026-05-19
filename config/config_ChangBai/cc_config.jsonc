@@ -26,6 +26,12 @@
   "cc_shot_batch_size": 16,
   // CC compute dtype. Options: float32, float64.
   "cc_dtype": "float32",
+  // Enable adaptive CUDA segment batch sizing. On OOM the batch is halved and retried.
+  "cc_auto_batch": true,
+  // Target maximum CUDA VRAM fraction for adaptive GPU work.
+  "cc_max_vram_fraction": 0.90,
+  // Preprocess and whiten each full selected segment chunk once before local shot slicing.
+  "cc_prewhiten_segment_once": true,
   // Time-domain smoothing length.
   "smooth_N": 5,
   // Spectral smoothing length.

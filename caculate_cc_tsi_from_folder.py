@@ -77,6 +77,14 @@ CC runtime parameters:
         Number of local shots correlated together in single_shot_local_cc mode.
     --cc-dtype {float32,float64}
         CC compute dtype.
+    --cc-auto-batch / --no-cc-auto-batch
+        Enable or disable adaptive CUDA local-CC batch sizing. When enabled,
+        CUDA out-of-memory errors halve the local segment batch and retry.
+    --cc-max-vram-fraction VALUE
+        Target maximum CUDA VRAM fraction used by adaptive GPU work.
+    --cc-prewhiten-segment-once / --no-cc-prewhiten-segment-once
+        Enable or disable the fast local-CC path that preprocesses and whitens
+        each selected segment time chunk once before slicing shot windows.
 
 TSI parameters:
     --tsi-mode {strict_sparse_all_shot,single_shot,single_shot_local_cc,single_shot_final_once}
