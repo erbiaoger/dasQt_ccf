@@ -67,11 +67,6 @@ from scipy.io import loadmat, savemat
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.sans-serif"] = ["Times New Roman"]
 
-from _bootstrap import ensure_dasqt_on_path
-
-
-ensure_dasqt_on_path(__file__)
-
 from dasQt.core.dispersion_components.ccf import stack_cc_chunks
 
 

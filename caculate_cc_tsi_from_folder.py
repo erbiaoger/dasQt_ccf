@@ -21,14 +21,6 @@ and remain compatible with the previous script.
 
 from __future__ import annotations
 
-from pathlib import Path
-
-
-from _bootstrap import ensure_dasqt_on_path
-
-
-ensure_dasqt_on_path(__file__)
-
 from dasQt.core.dispersion_components.ccf.folder_pipeline import run_cc_tsi_folder_pipeline
 
 
