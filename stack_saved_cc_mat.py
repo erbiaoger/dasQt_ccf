@@ -54,7 +54,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -68,11 +67,12 @@ from scipy.io import loadmat, savemat
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.sans-serif"] = ["Times New Roman"]
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from _bootstrap import ensure_dasqt_on_path
 
-from dasQt.dispersion import DAS_module
+
+ensure_dasqt_on_path(__file__)
+
+from dasQt.core.dispersion_components.ccf import stack_cc_chunks
 
 
 def parse_optional_int(value: str | None, *, name: str = "value") -> int | None:
@@ -85,12 +85,6 @@ def parse_optional_int(value: str | None, *, name: str = "value") -> int | None:
     if out <= 0:
         raise ValueError(f"{name} must be > 0 or None")
     return out
-
-
-def normalize_data(data: np.ndarray) -> np.ndarray:
-    max_values = np.max(np.abs(data), axis=0)
-    max_values = np.where(max_values == 0, 1.0, max_values)
-    return data / max_values[np.newaxis, :]
 
 
 def centers_to_edges(values: np.ndarray) -> np.ndarray:
@@ -119,20 +113,16 @@ def stack_cc_results(
         return np.mean(np.asarray(cc_list), axis=0)
 
     data_array = np.asarray(cc_list)
-    n, nt, nx = data_array.shape
-    data_array = data_array.reshape(n, -1)
-    stack_par = {
-        "samp_freq": 1.0 / dt,
-        "npts_chunk": nt,
-        "nsta": nx,
-        "stack_method": stacking_method,
-        "cc_backend": cc_backend,
-        "cc_device": cc_device,
-        "cc_dtype": cc_dtype,
-    }
-    stacked_data = DAS_module.stacking(data_array, stack_par)
-    stacked_data = normalize_data(stacked_data)
-    return stacked_data - np.mean(stacked_data, axis=0)
+    return stack_cc_chunks(
+        data_array,
+        dt=float(dt),
+        smethod=str(stacking_method),
+        params={
+            "cc_backend": str(cc_backend),
+            "cc_device": str(cc_device),
+            "cc_dtype": str(cc_dtype),
+        },
+    )
 
 
 def _to_mat_scalar(mat: dict[str, Any], key: str) -> Any:

@@ -21,20 +21,13 @@ and remain compatible with the previous script.
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve()
-PROJECT_ROOT_CANDIDATES = [
-    SCRIPT_PATH.parents[2],
-    SCRIPT_PATH.parents[1].with_name("dasQt"),
-]
-for candidate in PROJECT_ROOT_CANDIDATES:
-    if (candidate / "dasQt" / "__init__.py").exists():
-        if str(candidate) not in sys.path:
-            sys.path.insert(0, str(candidate))
-        break
+from _bootstrap import ensure_dasqt_on_path
+
+
+ensure_dasqt_on_path(__file__)
 
 from dasQt.core.dispersion_components.ccf.folder_pipeline import run_cc_tsi_folder_pipeline
 

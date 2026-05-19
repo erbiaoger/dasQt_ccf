@@ -75,6 +75,7 @@ import concurrent.futures
 import csv
 from dataclasses import dataclass
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -84,6 +85,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
+
+EXAMPLE_ROOT = Path(__file__).resolve().parents[1]
+if str(EXAMPLE_ROOT) not in sys.path:
+    sys.path.insert(0, str(EXAMPLE_ROOT))
+
+from _bootstrap import ensure_dasqt_on_path
+
+
+ensure_dasqt_on_path(__file__)
 
 from dasQt.core.dispersion_components.utils.dispersion_utils import (
     compute_dispersion_image,

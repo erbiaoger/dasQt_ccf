@@ -19,6 +19,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
+from _bootstrap import ensure_dasqt_on_path
+
+
+ensure_dasqt_on_path(__file__)
+
 from dasQt.utils.imshow import my_cmap, setAxis
 
 
