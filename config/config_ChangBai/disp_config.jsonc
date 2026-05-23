@@ -3,7 +3,7 @@
     // Minimum phase velocity in m/s.
     "cmin": 100.0,
     // Maximum phase velocity in m/s.
-    "cmax": 800.0,
+    "cmax": 500.0,
     // Velocity step in m/s.
     "dc": 1.0,
     // Minimum frequency in Hz.
@@ -15,15 +15,19 @@
     // If true, use the negative-lag/down-going branch during dispersion calculation.
     "cc_down": false,
     // If true, use the positive-lag/up-going branch during dispersion calculation.
-    "cc_up": false,
+    "cc_up": true,
     // If true, apply the saved mute-up polygon.
     "mute_up": false,
     // If true, apply the saved mute-down polygon.
     "mute_down": false,
     // Which side to use when plotting muted results. Common values: left, right.
     "which": "right",
-    // Dispersion algorithm. Common values: park, modified-fj, fj-python, hrlrt.
-    "method": "fphase-shift",
+    // Dispersion algorithm. Common values: park, modified-fj, fj-python, hrlrt, mmfj, mfj.
+    "method": "mfj",
+    // MMFJ extraction kernel when method is mmfj. Options: j0, j1, h0, h1.
+    "mmfj_kernel": "h1",
+    // MFJ extraction kernel when method is mfj. Options: j0, j1, h0, h1.
+    "mfj_kernel": "h1",
     // Spatial decimation factor for auto picking.
     "skip_Nch": 5,
     // Temporal/frequency decimation factor for auto picking.

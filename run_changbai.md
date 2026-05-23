@@ -141,7 +141,7 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/stacks \
   --output-root ./outputs/dispersion \
-  --config ./config/config_ChangBai/dispersion.jsonc \
+  --config ./config/config_ChangBai/disp_config.jsonc \
   --workers 32
 ```
 
