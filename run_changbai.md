@@ -43,13 +43,31 @@ uv run python stack_saved_cc_mat.py \
 
 ## 多文件夹计算
 
+### CPU 计算（不推荐）
+
 ```bash
 uv run python batch_caculate_cc_tsi_from_subfolders.py \
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
   --output-root ./cc_tsi_outputs_by_folder \
-  --config ./config_ChangBai/cc_config.jsonc \
+  --config ./config/config_ChangBai/cc_config.jsonc \
   --save-every 30 \
   --date-start 2025-03-25 \
+  --time-start 08:00 \
+  --time-end 18:00 \
+  --workers 64 \
+  --tsi-progress
+```
+
+
+### GPU 计算
+
+```bash
+uv run python batch_caculate_cc_tsi_from_subfolders.py \
+  --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
+  --output-root ./outputs/cc_tsi \
+  --config ./config/config_ChangBai/cc_config.jsonc \
+  --save-every 30 \
+  --date-start 2025-07-07 \
   --time-start 08:00 \
   --time-end 18:00 \
   --tsi-progress
@@ -81,16 +99,17 @@ uv run python batch_caculate_cc_tsi_from_subfolders.py \
 
 ```bash
 uv run python batch_stack_saved_cc_mat.py \
-  --input-root ./outputs/cc_tsi_outputs_by_folder \
-  --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --input-root ./outputs/cc_tsi \
+  --output-root ./outputs/stacks \
   --glob "cc_stack_tsi_*.mat" \
   --stack-size None \
   --interval None \
   --stack-method robust \
-  --cc-backend cpu \
-  --cc-device cpu \
+  --cc-backend auto \
+  --cc-device auto \
   --jobs 32 \
-  --plot-name local_cc_preview.png
+  --no-save-summary-plot \
+  --no-save-shot-figures
 
 uv run python batch_stack_saved_cc_mat.py \
   --input-root ./outputs/cc_tsi_outputs_by_folder \
@@ -115,29 +134,33 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
   --output-root ./outputs/dispersion_outputs_ChangBai_single \
   --config ./config/config_ChangBai/dispersion.jsonc
+```
 
-
-## 单文件夹提频散
+## 多文件夹提频散
+```bash
 uv run python tools/extract_dispersion_from_cc_mat.py \
-  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
-  --output-root ./outputs/dispersion_outputs_ChangBai \
+  --input-root ./outputs/stacks \
+  --output-root ./outputs/dispersion \
   --config ./config/config_ChangBai/dispersion.jsonc \
   --workers 32
+```
 
 如果只想先做部分炮：
 
+```bash
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
   --config ./config/config_ChangBai/dispersion.jsonc \
   --shot-stop 20 \
   --save-npz
-
+```
 
 ### 绘制gif
 
+```bash
 uv run python tools/create_shot_dispersion_gif.py \
   --input-root ./outputs/dispersion_outputs_ChangBai \
   --shot-index 179 \
   --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif
-
+```

@@ -109,7 +109,7 @@ uv run python tools/build_cc_h5_cube.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/dispersion.jsonc \
+  --config ./config/config_ChangBai/disp_config.jsonc \
   --workers 8
 ```
 
@@ -121,7 +121,7 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
   --output-root ./outputs/dispersion_outputs_ChangBai_single \
-  --config ./config/config_ChangBai/dispersion.jsonc
+  --config ./config/config_ChangBai/disp_config.jsonc
 ```
 
 把第 179 炮在所有子目录中的频散图合成 GIF:

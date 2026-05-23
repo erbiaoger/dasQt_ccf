@@ -181,14 +181,14 @@ uv run python tools/build_cc_h5_cube.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
   --output-root ./outputs/dispersion_outputs_ChangBai_single \
-  --config ./config/config_ChangBai/dispersion.jsonc
+  --config ./config/config_ChangBai/disp_config.jsonc
 
 直接用这个命令：
 
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/dispersion.jsonc \
+  --config ./config/config_ChangBai/disp_config.jsonc \
   --workers 32
 
 如果只想先做部分炮：
@@ -196,7 +196,7 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
 uv run python tools/extract_dispersion_from_cc_mat.py \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/dispersion.jsonc \
+  --config ./config/config_ChangBai/disp_config.jsonc \
   --shot-stop 20 \
   --save-npz
 
