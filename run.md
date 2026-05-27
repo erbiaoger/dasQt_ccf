@@ -208,5 +208,10 @@ uv run python tools/create_shot_dispersion_gif.py \
   --shot-index 179 \
   --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif
 
+uv run --with pillow python tools/create_shot_dispersion_gif.py \
+  --input-root outputs/dispersion/2025-03-23/restack_0001_nall_idx0000-0004 \
+  --all-images \
+  --output-gif ./outputs/dispersion/2025-03-23/dispersion_all.gif
+
 
 source /csim2/zhangzhiyu/MyProjects/DAS_Procee_Show/.venv/bin/activate
