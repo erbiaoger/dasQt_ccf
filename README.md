@@ -9,7 +9,7 @@
 - [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/stack_saved_cc_mat.py): 对单个输出目录中的多个 `cc_stack*.mat` 做二次叠加、出图、保存 `restack*.mat`。
 - [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加，支持多文件夹 CPU 并行。
 - [config](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config): 各数据源的配置目录。
-- [tools](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换和索引构建。
+- [tools](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换、索引构建和 GIF 合成。
 - [notebooks](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks): Notebook 目录，用于磁盘后端数据集构建与探索分析。
 - [outputs](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/outputs): 示例输出根目录。
 - [run.sh](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/run.sh): 常用命令示例。
@@ -21,7 +21,7 @@
 3. 再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 把每个日期目录里的 `.mat` 汇总成磁盘后端 HDF5 立方体。
 4. 最后用 [build-disk-backed-changbai-cc-cube.ipynb](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks/build-disk-backed-changbai-cc-cube.ipynb) 只读 HDF5 并做绘图分析。
 5. 如果需要逐炮 CC+频散对照图，使用 [extract_dispersion_from_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/extract_dispersion_from_cc_mat.py) 从每个 `.mat` 直接批量提取并保存。
-6. 如果需要把固定炮号在所有日期/子目录中的频散图串成动图，使用 [create_shot_dispersion_gif.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/create_shot_dispersion_gif.py) 生成 GIF。
+6. 如果需要把某个目录下所有频散图片，或固定炮号在所有日期/子目录中的频散图串成动图，使用 [create_shot_dispersion_gif.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools/create_shot_dispersion_gif.py) 生成 GIF。
 
 ## ChangBai 示例
 
@@ -124,10 +124,21 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
   --config ./config/config_ChangBai/disp_config.jsonc
 ```
 
+把 `outputs/dispersion/2025-03-23` 下所有图片合成 GIF:
+
+```bash
+uv run --with pillow python tools/create_shot_dispersion_gif.py \
+  --input-root ./outputs/dispersion/2025-03-23 \
+  --all-images \
+  --output-gif ./outputs/dispersion/2025-03-23/dispersion_all.gif
+```
+
+如果图片分布在子目录中，增加 `--recursive`。
+
 把第 179 炮在所有子目录中的频散图合成 GIF:
 
 ```bash
-uv run python tools/create_shot_dispersion_gif.py \
+uv run --with pillow python tools/create_shot_dispersion_gif.py \
   --input-root ./outputs/dispersion_outputs_ChangBai \
   --shot-index 179 \
   --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif

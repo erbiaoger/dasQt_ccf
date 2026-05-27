@@ -6,7 +6,7 @@
 
 - [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py): 扫描 `cc_tsi_plot_outputs_ChangBai` 一类目录，把每个日期目录中的一个 `.mat` 汇总成 HDF5 4D 立方体，并输出索引 CSV。
 - [extract_dispersion_from_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/extract_dispersion_from_cc_mat.py): 扫描 `.mat` 目录树，逐个 `.mat` 对所有炮提取频散，并保存横向双图 PNG（左 CC，右频散），可选保存频散数据立方 `npz`。
-- [create_shot_dispersion_gif.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/create_shot_dispersion_gif.py): 递归收集同一炮号的 `shot_XXXX_dispersion.png`，按子目录顺序合成为一个 GIF，便于跨日期/批次浏览。
+- [create_shot_dispersion_gif.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools/create_shot_dispersion_gif.py): 将频散图片合成为 GIF；支持把一个目录下所有图片按文件名顺序合成，也支持递归收集同一炮号的 `shot_XXXX_dispersion.png` 做跨日期/批次浏览。
 
 ## 使用方式
 
@@ -40,10 +40,21 @@ uv run python tools/extract_dispersion_from_cc_mat.py \
   --config ./config/config_ChangBai/disp_config.jsonc
 ```
 
+将 `outputs/dispersion/2025-03-23` 下所有图片合成为 GIF:
+
+```bash
+uv run --with pillow python tools/create_shot_dispersion_gif.py \
+  --input-root ./outputs/dispersion/2025-03-23 \
+  --all-images \
+  --output-gif ./outputs/dispersion/2025-03-23/dispersion_all.gif
+```
+
+如果图片还分散在子目录中，增加 `--recursive`。
+
 将第 179 炮在所有子目录中的频散图合成为 GIF:
 
 ```bash
-uv run python tools/create_shot_dispersion_gif.py \
+uv run --with pillow python tools/create_shot_dispersion_gif.py \
   --input-root ./outputs/dispersion_outputs_ChangBai \
   --shot-index 179 \
   --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif
@@ -54,5 +65,6 @@ uv run python tools/create_shot_dispersion_gif.py \
 - `cc_cube_by_date.h5`: HDF5 磁盘后端 4D 数据立方体
 - `cc_cube_index.csv`: 每个 date 样本对应的源目录、源文件、shape 和候选文件列表
 - `dispersion_outputs_ChangBai/.../shot_XXXX_dispersion.png`: 每炮横向双图，左 CC，右频散
+- `outputs/dispersion/2025-03-23/dispersion_all.gif`: 某个目录下所有图片的 GIF 汇总图
 - `dispersion_outputs_ChangBai/shot_XXXX_dispersion.gif`: 某一固定炮号跨多个子目录的 GIF 汇总图
 - `dispersion_outputs_ChangBai/dispersion_index.csv`: 全部处理文件索引
