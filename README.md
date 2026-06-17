@@ -2,12 +2,39 @@
 
 本目录用于 DAS 互相关 / TSI 结果的单目录计算、批量计算、二次叠加与可视化。
 
+## 推荐入口
+
+优先使用本目录下的 shell 脚本，而不是手动拼 Python 命令。它们会自动:
+
+- 切到 `dasQt` 项目的 `.venv`
+- 使用 `uv run python ...`
+- 保持参数名与底层 Python CLI 一致
+- 支持在命令末尾用 `--` 继续透传额外 Python 参数
+
+推荐脚本:
+
+- [run_single_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_compute.sh): 单文件夹计算 CC / TSI
+- [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh): 多文件夹批量计算 CC / TSI
+- [run_single_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_stack.sh): 单文件夹二次叠加
+- [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh): 多文件夹二次叠加
+- [run_single_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_dispersion.sh): 单文件夹提取频散图
+- [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh): 多文件夹批量提取频散图
+- [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh): 将频散图片合成为 GIF
+- [_shell_common.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/_shell_common.sh): 这些 shell 脚本共享的环境与运行辅助函数
+
 ## 目录作用
 
 - [caculate_cc_tsi_from_folder.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/caculate_cc_tsi_from_folder.py): 对单个数据目录计算 CC / TSI，并周期性保存 `cc_stack*.mat`。
 - [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py): 扫描一个根数据目录下的所有子目录，逐个调用单目录脚本。
 - [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/stack_saved_cc_mat.py): 对单个输出目录中的多个 `cc_stack*.mat` 做二次叠加、出图、保存 `restack*.mat`。
 - [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加，支持多文件夹 CPU 并行。
+- [run_single_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_compute.sh): 单文件夹计算 shell 包装脚本。
+- [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh): 多文件夹批量计算 shell 包装脚本。
+- [run_single_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_stack.sh): 单文件夹二次叠加 shell 包装脚本。
+- [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh): 多文件夹二次叠加 shell 包装脚本。
+- [run_single_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_dispersion.sh): 单文件夹提频散 shell 包装脚本。
+- [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh): 多文件夹提频散 shell 包装脚本。
+- [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh): 频散图片转 GIF shell 包装脚本。
 - [config](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config): 各数据源的配置目录。
 - [tools](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换、索引构建和 GIF 合成。
 - [notebooks](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks): Notebook 目录，用于磁盘后端数据集构建与探索分析。
@@ -16,12 +43,11 @@
 
 ## 推荐工作流
 
-1. 先用 [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py) 生成每个日期/子目录的 `cc_stack_tsi_*.mat`。
-2. 再用 [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py) 批量对这些目录做二次叠加。
-3. 再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 把每个日期目录里的 `.mat` 汇总成磁盘后端 HDF5 立方体。
-4. 最后用 [build-disk-backed-changbai-cc-cube.ipynb](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks/build-disk-backed-changbai-cc-cube.ipynb) 只读 HDF5 并做绘图分析。
-5. 如果需要逐炮 CC+频散对照图，使用 [extract_dispersion_from_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/extract_dispersion_from_cc_mat.py) 从每个 `.mat` 直接批量提取并保存。
-6. 如果需要把某个目录下所有频散图片，或固定炮号在所有日期/子目录中的频散图串成动图，使用 [create_shot_dispersion_gif.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools/create_shot_dispersion_gif.py) 生成 GIF。
+1. 先用 [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh) 生成每个日期/子目录的 `cc_stack_tsi_*.mat`。
+2. 再用 [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh) 对这些目录做二次叠加。
+3. 再用 [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh) 批量提取频散图。
+4. 如果需要把某个目录下所有频散图片，或固定炮号在所有日期/子目录中的频散图串成动图，使用 [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh)。
+5. 如果需要离线汇总成磁盘后端 HDF5，再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 和 notebook 做只读分析。
 
 ## ChangBai 示例
 
