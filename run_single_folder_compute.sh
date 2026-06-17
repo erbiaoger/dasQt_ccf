@@ -17,6 +17,10 @@
 #     --save-every 30 \
 #     --start-index 10 \
 #     --end-index 10 \
+#     --cc-prewhiten-mode auto \
+#     --cc-prewhiten-tile-channels 512 \
+#     --cc-memory-safety-fraction 0.70 \
+#     --profile-stages \
 #     -- --cc-enhance tsi --tsi-mode single_shot_local_cc --tsi-progress
 #
 # Parameters:
@@ -27,6 +31,10 @@
 #   --start-index N     Start file index after sorting/filtering. Default: 0
 #   --end-index N       End file index (inclusive). Default: unset
 #   --workers N         Worker count passed to Python CLI. Default: 1
+#   --cc-prewhiten-mode MODE    auto | full | tiled | off. Default: unset
+#   --cc-prewhiten-tile-channels N  Tile width for tiled prewhiten. Default: unset
+#   --cc-memory-safety-fraction X   Fraction of free CUDA memory allowed for planning. Default: unset
+#   --profile-stages    Print per-file stage profiling.
 #   --help              Show this message.
 
 set -euo pipefail
@@ -48,6 +56,13 @@ Options:
   --start-index N     Default: 0
   --end-index N       Default: unset
   --workers N         Default: 1
+  --cc-prewhiten-mode MODE
+                     Optional: auto | full | tiled | off
+  --cc-prewhiten-tile-channels N
+                     Optional tiled prewhiten channel count
+  --cc-memory-safety-fraction X
+                     Optional free-memory safety fraction, e.g. 0.70
+  --profile-stages    Enable per-file profiling logs
   --help              Show help.
 EOF
   print_common_footer
@@ -60,6 +75,10 @@ SAVE_EVERY="30"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
+CC_PREWHITEN_MODE=""
+CC_PREWHITEN_TILE_CHANNELS=""
+CC_MEMORY_SAFETY_FRACTION=""
+PROFILE_STAGES="0"
 EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -71,6 +90,10 @@ while [[ $# -gt 0 ]]; do
     --start-index) START_INDEX="$2"; shift 2 ;;
     --end-index) END_INDEX="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
+    --cc-prewhiten-mode) CC_PREWHITEN_MODE="$2"; shift 2 ;;
+    --cc-prewhiten-tile-channels) CC_PREWHITEN_TILE_CHANNELS="$2"; shift 2 ;;
+    --cc-memory-safety-fraction) CC_MEMORY_SAFETY_FRACTION="$2"; shift 2 ;;
+    --profile-stages) PROFILE_STAGES="1"; shift ;;
     --help|-h) usage; exit 0 ;;
     --) shift; EXTRA_ARGS=("$@"); break ;;
     *) echo "[ERROR] Unknown argument: $1" >&2; usage; exit 1 ;;
@@ -95,6 +118,18 @@ CMD=(
 
 if [[ -n "${END_INDEX}" ]]; then
   CMD+=(--end-index "${END_INDEX}")
+fi
+if [[ -n "${CC_PREWHITEN_MODE}" ]]; then
+  CMD+=(--cc-prewhiten-mode "${CC_PREWHITEN_MODE}")
+fi
+if [[ -n "${CC_PREWHITEN_TILE_CHANNELS}" ]]; then
+  CMD+=(--cc-prewhiten-tile-channels "${CC_PREWHITEN_TILE_CHANNELS}")
+fi
+if [[ -n "${CC_MEMORY_SAFETY_FRACTION}" ]]; then
+  CMD+=(--cc-memory-safety-fraction "${CC_MEMORY_SAFETY_FRACTION}")
+fi
+if [[ "${PROFILE_STAGES}" == "1" ]]; then
+  CMD+=(--profile-stages)
 fi
 
 if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then

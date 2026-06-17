@@ -18,6 +18,10 @@
 #     --date-start 2025-03-27 \
 #     --time-start 08:00 \
 #     --time-end 18:00 \
+#     --cc-prewhiten-mode auto \
+#     --cc-prewhiten-tile-channels 512 \
+#     --cc-memory-safety-fraction 0.70 \
+#     --profile-stages \
 #     -- --cc-enhance tsi --refresh-file-index
 #
 # Parameters:
@@ -28,6 +32,10 @@
 #   --start-index N        Passed to single-folder compute. Default: 0
 #   --end-index N          Passed to single-folder compute. Default: unset
 #   --workers N            Passed to single-folder compute. Default: 1
+#   --cc-prewhiten-mode MODE    Passed to single-folder compute. Default: unset
+#   --cc-prewhiten-tile-channels N  Passed to single-folder compute. Default: unset
+#   --cc-memory-safety-fraction X   Passed to single-folder compute. Default: unset
+#   --profile-stages       Passed to single-folder compute.
 #   --date-start YYYY-MM-DD  Optional folder date filter.
 #   --time-start HH:MM     Optional file time lower bound. Must pair with --time-end.
 #   --time-end HH:MM       Optional file time upper bound. Must pair with --time-start.
@@ -55,6 +63,13 @@ Options:
   --start-index N         Default: 0
   --end-index N           Default: unset
   --workers N             Default: 1
+  --cc-prewhiten-mode MODE
+                         Optional: auto | full | tiled | off
+  --cc-prewhiten-tile-channels N
+                         Optional tiled prewhiten channel count
+  --cc-memory-safety-fraction X
+                         Optional free-memory safety fraction, e.g. 0.70
+  --profile-stages        Enable per-file profiling logs
   --date-start DATE       Optional YYYY-MM-DD filter.
   --time-start HH:MM      Optional time filter lower bound.
   --time-end HH:MM        Optional time filter upper bound.
@@ -73,6 +88,10 @@ SAVE_EVERY="30"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
+CC_PREWHITEN_MODE=""
+CC_PREWHITEN_TILE_CHANNELS=""
+CC_MEMORY_SAFETY_FRACTION=""
+PROFILE_STAGES="0"
 DATE_START=""
 TIME_START=""
 TIME_END=""
@@ -90,6 +109,10 @@ while [[ $# -gt 0 ]]; do
     --start-index) START_INDEX="$2"; shift 2 ;;
     --end-index) END_INDEX="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
+    --cc-prewhiten-mode) CC_PREWHITEN_MODE="$2"; shift 2 ;;
+    --cc-prewhiten-tile-channels) CC_PREWHITEN_TILE_CHANNELS="$2"; shift 2 ;;
+    --cc-memory-safety-fraction) CC_MEMORY_SAFETY_FRACTION="$2"; shift 2 ;;
+    --profile-stages) PROFILE_STAGES="1"; shift ;;
     --date-start) DATE_START="$2"; shift 2 ;;
     --time-start) TIME_START="$2"; shift 2 ;;
     --time-end) TIME_END="$2"; shift 2 ;;
@@ -120,6 +143,18 @@ CMD=(
 
 if [[ -n "${END_INDEX}" ]]; then
   CMD+=(--end-index "${END_INDEX}")
+fi
+if [[ -n "${CC_PREWHITEN_MODE}" ]]; then
+  CMD+=(--cc-prewhiten-mode "${CC_PREWHITEN_MODE}")
+fi
+if [[ -n "${CC_PREWHITEN_TILE_CHANNELS}" ]]; then
+  CMD+=(--cc-prewhiten-tile-channels "${CC_PREWHITEN_TILE_CHANNELS}")
+fi
+if [[ -n "${CC_MEMORY_SAFETY_FRACTION}" ]]; then
+  CMD+=(--cc-memory-safety-fraction "${CC_MEMORY_SAFETY_FRACTION}")
+fi
+if [[ "${PROFILE_STAGES}" == "1" ]]; then
+  CMD+=(--profile-stages)
 fi
 if [[ -n "${DATE_START}" ]]; then
   CMD+=(--date-start "${DATE_START}")
