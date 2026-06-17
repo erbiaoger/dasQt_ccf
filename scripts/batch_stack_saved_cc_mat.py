@@ -5,7 +5,7 @@
 
 用途:
 1) 扫描一个输出根目录下所有包含 `cc_stack_tsi_*.mat`（或自定义 glob）的文件夹。
-2) 对每个匹配文件夹调用现有 `stack_saved_cc_mat.py`。
+2) 对每个匹配文件夹调用现有 `scripts/stack_saved_cc_mat.py`。
 3) 将每个数据文件夹的叠加结果输出到独立的目标子目录，保持与输入目录相同的相对层级。
 4) 适合处理类似:
    `./outputs/cc_tsi_outputs_by_folder/2025-03-27/`
@@ -14,7 +14,7 @@
 
 如何运行:
 1) 批量处理所有日期目录:
-   `uv run python batch_stack_saved_cc_mat.py \
+   `uv run python scripts/batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
       --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --glob "cc_stack_tsi_*.mat" \
@@ -27,7 +27,7 @@
       --plot-name local_cc_preview.png`
 
 5) 只做叠加保存 `.mat`，不生成任何图片:
-   `uv run python batch_stack_saved_cc_mat.py \
+   `uv run python scripts/batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
       --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --glob "cc_stack_tsi_*.mat" \
@@ -35,19 +35,19 @@
       --no-save-shot-figures`
 
 2) 只预览命令，不实际执行:
-   `uv run python batch_stack_saved_cc_mat.py \
+   `uv run python scripts/batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
       --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --dry-run`
 
 3) 只处理某一天:
-   `uv run python batch_stack_saved_cc_mat.py \
+   `uv run python scripts/batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
       --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --folder-glob "2025-03-27"`
 
 4) 跳过已经生成过目标图的目录:
-   `uv run python batch_stack_saved_cc_mat.py \
+   `uv run python scripts/batch_stack_saved_cc_mat.py \
       --input-root ./outputs/cc_tsi_outputs_by_folder \
       --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --skip-existing`
@@ -58,10 +58,10 @@
 - `--glob`: 每个输入子目录中用于查找 `.mat` 文件的模式。
 - `--folder-glob`: 限制只处理相对路径匹配该 glob 的目录。
 - `--stack-size`, `--interval`, `--stack-method`, `--plot-name`:
-  透传给 `stack_saved_cc_mat.py`。
+  透传给 `scripts/stack_saved_cc_mat.py`。
 - `--cc-backend`, `--cc-device`, `--cc-dtype`:
-  透传给 `stack_saved_cc_mat.py`，用于显式指定 CPU/GPU 叠加。
-- `--start-index`: 透传给 `stack_saved_cc_mat.py`，控制从第几个 `.mat` 文件开始参与二次叠加。
+  透传给 `scripts/stack_saved_cc_mat.py`，用于显式指定 CPU/GPU 叠加。
+- `--start-index`: 透传给 `scripts/stack_saved_cc_mat.py`，控制从第几个 `.mat` 文件开始参与二次叠加。
 - `--jobs`: 多文件夹并行度；并行单位是子目录。
 - `--skip-existing`: 若目标子目录中已存在 `--plot-name`，则跳过该目录。
 - `--recursive`: 递归扫描输入根目录；默认开启。
@@ -88,6 +88,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True)
@@ -211,24 +213,24 @@ def emit_job_result(result: JobRunResult) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Batch-run stack_saved_cc_mat.py for all matching output folders."
+        description="Batch-run scripts/stack_saved_cc_mat.py for all matching output folders."
     )
     parser.add_argument(
         "--input-root",
         type=Path,
-        default=Path(__file__).resolve().parent / "outputs/cc_tsi_outputs_by_folder",
+        default=PROJECT_DIR / "outputs/cc_tsi_outputs_by_folder",
         help="包含多个已保存 CC/TSI .mat 子目录的输入根目录。",
     )
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path(__file__).resolve().parent / "outputs/cc_tsi_plot_outputs_by_folder",
+        default=PROJECT_DIR / "outputs/cc_tsi_plot_outputs_by_folder",
         help="批量叠加结果输出根目录。",
     )
     parser.add_argument(
         "--single-script",
         type=Path,
-        default=Path(__file__).resolve().parent / "stack_saved_cc_mat.py",
+        default=PROJECT_DIR / "scripts/stack_saved_cc_mat.py",
         help="单目录叠加脚本路径。",
     )
     parser.add_argument(

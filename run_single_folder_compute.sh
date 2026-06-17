@@ -84,7 +84,7 @@ if [[ -z "${DATA_FOLDER}" ]]; then
 fi
 
 CMD=(
-  "${SCRIPT_DIR}/caculate_cc_tsi_from_folder.py"
+  "${SCRIPT_DIR}/scripts/caculate_cc_tsi_from_folder.py"
   --config "${CONFIG}"
   --data-folder "${DATA_FOLDER}"
   --output-dir "${OUTPUT_DIR}"

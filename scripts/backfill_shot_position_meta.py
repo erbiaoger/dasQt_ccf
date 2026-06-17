@@ -39,13 +39,13 @@ Fields written into MAT:
 
 How to run:
 1) In-place update (recommended for one directory):
-   `uv run python examples/03_ccf/backfill_shot_position_meta.py \
+   `uv run python examples/03_ccf/scripts/backfill_shot_position_meta.py \
       --input-dir /Users/zhangzhiyu/Downloads/cc_tsi_outputs`
 2) Preview only (no file write):
-   `uv run python examples/03_ccf/backfill_shot_position_meta.py \
+   `uv run python examples/03_ccf/scripts/backfill_shot_position_meta.py \
       --input-dir /Users/zhangzhiyu/Downloads/cc_tsi_outputs --dry-run`
 3) Write to a separate output directory:
-   `uv run python examples/03_ccf/backfill_shot_position_meta.py \
+   `uv run python examples/03_ccf/scripts/backfill_shot_position_meta.py \
       --input-dir /path/to/old_mats --output-dir /path/to/new_mats`
 
 Outputs:

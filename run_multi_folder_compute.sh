@@ -109,7 +109,7 @@ if [[ -z "${ROOT_DATA_DIR}" ]]; then
 fi
 
 CMD=(
-  "${SCRIPT_DIR}/batch_caculate_cc_tsi_from_subfolders.py"
+  "${SCRIPT_DIR}/scripts/batch_caculate_cc_tsi_from_subfolders.py"
   --root-data-dir "${ROOT_DATA_DIR}"
   --output-root "${OUTPUT_ROOT}"
   --config "${CONFIG}"

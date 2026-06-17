@@ -5,7 +5,7 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
 用途:
 1) 扫描一个根目录下的子文件夹（可选递归）。
 2) 对每个包含 DAS 数据文件的子文件夹，调用现有脚本
-   `caculate_cc_tsi_from_folder.py` 进行计算。
+   `scripts/caculate_cc_tsi_from_folder.py` 进行计算。
 3) 结果按子文件夹相对路径分别保存，避免不同数据源混在一起。
 
 适用场景:
@@ -15,30 +15,30 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
 
 执行方式:
 1) 直接批处理（默认遍历一层子目录）:
-   `uv run python examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py \
+   `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /Volumes/CSIM_LAB/DATA/DAS/JLU/JLU-2025-01-07 \
       --output-root /Users/zhangzhiyu/Downloads/cc_tsi_outputs_by_folder \
       --config /Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config/cc_config.jsonc \
       --cc-enhance tsi --tsi-mode single_shot_local_cc --save-every 5`
 
 2) 先预览命令，不执行:
-   `uv run python examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py \
+   `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /Volumes/CSIM_LAB/DATA/DAS/JLU/JLU-2025-01-07 \
       --dry-run`
 
 3) 递归扫描所有层级子目录:
-   `uv run python examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py \
+   `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /Volumes/CSIM_LAB/DATA/DAS/JLU/JLU-2025-01-07 \
       --recursive`
 
 4) 仅处理每天 08:00-18:00:
-   `uv run python examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py \
+   `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
       --config ./config_ChangBai/cc_config.jsonc \
       --time-start 08:00 --time-end 18:00`
 
 5) 从指定日期开始处理:
-   `uv run python examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py \
+   `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
       --config ./config_ChangBai/cc_config.jsonc \
       --date-start 2025-03-23`
@@ -74,6 +74,7 @@ from typing import Sequence
 
 SUPPORTED_SUFFIXES = (".pkl", ".pickle", ".tdms", ".h5", ".hdf5", ".segy", ".sgy", ".dat")
 FILENAME_TIME_FORMAT = "%Y-%m-%d-%H-%M-%S"
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
 @dataclass
@@ -290,7 +291,7 @@ def build_single_command(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Batch run caculate_cc_tsi_from_folder.py for all data subfolders."
+        description="Batch run scripts/caculate_cc_tsi_from_folder.py for all data subfolders."
     )
     parser.add_argument(
         "--root-data-dir",
@@ -301,19 +302,19 @@ def main() -> None:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path(__file__).resolve().parent / "cc_tsi_outputs_by_folder",
+        default=PROJECT_DIR / "outputs/cc_tsi_outputs_by_folder",
         help="批处理输出根目录（每个子目录会对应一个子输出目录）。",
     )
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path(__file__).resolve().parent / "config/cc_config.jsonc",
+        default=PROJECT_DIR / "config/config_ChangBai/cc_config.jsonc",
         help="单目录计算脚本使用的配置文件。",
     )
     parser.add_argument(
         "--single-script",
         type=Path,
-        default=Path(__file__).resolve().parent / "caculate_cc_tsi_from_folder.py",
+        default=PROJECT_DIR / "scripts/caculate_cc_tsi_from_folder.py",
         help="单目录计算脚本路径。",
     )
     parser.add_argument(

@@ -1,175 +1,111 @@
 # 03_ccf
 
-本目录用于 DAS 互相关 / TSI 结果的单目录计算、批量计算、二次叠加与可视化。
+本目录用于 DAS 互相关 / TSI 的计算、二次叠加、频散提取和 GIF 可视化。
+
+## 目录结构
+
+- 根目录保留 7 个 shell 入口脚本，适合直接运行。
+- [scripts](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts) 放具体 Python CLI 实现。
+- [config](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config) 放各数据源配置。
+- [tools](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools) 放辅助工具，如提频散、建 HDF5、生成 GIF。
+- [notebooks](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/notebooks) 放探索分析 notebook。
+- [outputs](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/outputs) 放示例输出目录。
 
 ## 推荐入口
 
-优先使用本目录下的 shell 脚本，而不是手动拼 Python 命令。它们会自动:
+优先使用根目录下这 7 个 shell 脚本。它们会自动：
 
 - 切到 `dasQt` 项目的 `.venv`
 - 使用 `uv run python ...`
-- 保持参数名与底层 Python CLI 一致
-- 支持在命令末尾用 `--` 继续透传额外 Python 参数
+- 保持参数名和底层 Python CLI 基本一致
+- 支持在命令末尾用 `--` 继续透传底层 Python 参数
 
-推荐脚本:
+脚本列表：
 
 - [run_single_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_compute.sh): 单文件夹计算 CC / TSI
 - [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh): 多文件夹批量计算 CC / TSI
 - [run_single_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_stack.sh): 单文件夹二次叠加
 - [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh): 多文件夹二次叠加
-- [run_single_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_dispersion.sh): 单文件夹提取频散图
-- [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh): 多文件夹批量提取频散图
-- [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh): 将频散图片合成为 GIF
-- [_shell_common.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/_shell_common.sh): 这些 shell 脚本共享的环境与运行辅助函数
+- [run_single_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_dispersion.sh): 单文件夹提频散
+- [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh): 多文件夹提频散
+- [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh): 频散图片生成 GIF
 
-## 目录作用
+公共环境辅助脚本：
 
-- [caculate_cc_tsi_from_folder.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/caculate_cc_tsi_from_folder.py): 对单个数据目录计算 CC / TSI，并周期性保存 `cc_stack*.mat`。
-- [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_caculate_cc_tsi_from_subfolders.py): 扫描一个根数据目录下的所有子目录，逐个调用单目录脚本。
-- [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/stack_saved_cc_mat.py): 对单个输出目录中的多个 `cc_stack*.mat` 做二次叠加、出图、保存 `restack*.mat`。
-- [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/batch_stack_saved_cc_mat.py): 批量扫描 `cc_tsi_outputs_by_folder` 这类目录，对每个子目录执行二次叠加，支持多文件夹 CPU 并行。
-- [run_single_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_compute.sh): 单文件夹计算 shell 包装脚本。
-- [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh): 多文件夹批量计算 shell 包装脚本。
-- [run_single_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_stack.sh): 单文件夹二次叠加 shell 包装脚本。
-- [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh): 多文件夹二次叠加 shell 包装脚本。
-- [run_single_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_single_folder_dispersion.sh): 单文件夹提频散 shell 包装脚本。
-- [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh): 多文件夹提频散 shell 包装脚本。
-- [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh): 频散图片转 GIF shell 包装脚本。
-- [config](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config): 各数据源的配置目录。
-- [tools](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools): 离线辅助 CLI 工具目录，负责格式转换、索引构建和 GIF 合成。
-- [notebooks](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/notebooks): Notebook 目录，用于磁盘后端数据集构建与探索分析。
-- [outputs](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/outputs): 示例输出根目录。
-- [run.sh](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/run.sh): 常用命令示例。
+- [_shell_common.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/_shell_common.sh)
+
+## Python 脚本
+
+Python CLI 已统一移动到 [scripts](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts)：
+
+- [scripts/caculate_cc_tsi_from_folder.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py): 单文件夹计算
+- [scripts/batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py): 多文件夹批量计算
+- [scripts/stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/stack_saved_cc_mat.py): 单文件夹二次叠加
+- [scripts/batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/batch_stack_saved_cc_mat.py): 多文件夹二次叠加
+- [scripts/backfill_shot_position_meta.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/backfill_shot_position_meta.py): 给旧 MAT 回填 shot 空间元数据
+- [scripts/plot_cc_m3_shots.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/plot_cc_m3_shots.py): 绘制 shot 级 CC + m3 联图
+
+更多用途和参数说明见：
+
+- [scripts/README.md](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/README.md)
 
 ## 推荐工作流
 
-1. 先用 [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh) 生成每个日期/子目录的 `cc_stack_tsi_*.mat`。
-2. 再用 [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh) 对这些目录做二次叠加。
-3. 再用 [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh) 批量提取频散图。
-4. 如果需要把某个目录下所有频散图片，或固定炮号在所有日期/子目录中的频散图串成动图，使用 [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh)。
-5. 如果需要离线汇总成磁盘后端 HDF5，再用 [build_cc_h5_cube.py](/Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/tools/build_cc_h5_cube.py) 和 notebook 做只读分析。
+1. 用 [run_multi_folder_compute.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_compute.sh) 生成每个日期/子目录的 `cc_stack_tsi_*.mat`
+2. 用 [run_multi_folder_stack.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_stack.sh) 对各目录做二次叠加
+3. 用 [run_multi_folder_dispersion.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_multi_folder_dispersion.sh) 提取频散图
+4. 用 [run_dispersion_gif.sh](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/run_dispersion_gif.sh) 把同一炮号或同一目录图片合成为 GIF
 
-## ChangBai 示例
+## 快速开始
 
-先批量计算:
+单文件夹计算：
 
 ```bash
-uv run python batch_caculate_cc_tsi_from_subfolders.py \
-  --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
-  --output-root ./outputs/cc_tsi_outputs_by_folder \
+./run_single_folder_compute.sh \
   --config ./config/config_ChangBai/cc_config.jsonc \
+  --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
+  --output-dir ./outputs/cc_tsi_outputs_single \
+  --save-every 30 \
+  --start-index 0 \
+  --end-index 1438 \
+  -- --cc-enhance tsi --tsi-progress
+```
+
+多文件夹计算：
+
+```bash
+./run_multi_folder_compute.sh \
+  --config ./config/config_ChangBai/cc_config.jsonc \
+  --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
+  --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
   --date-start 2025-03-27 \
   --time-start 08:00 \
   --time-end 18:00 \
-  --tsi-progress
+  -- --cc-enhance tsi --tsi-progress
 ```
 
-ChangBai 的推荐 GPU 配置在 `config/config_ChangBai/cc_config.jsonc` 中，默认启用:
-
-- `cc_device=all_cuda`
-- `tsi_mode=single_shot_local_cc`
-- `cc_prewhiten_segment_once=true`
-- `cc_auto_batch=true`
-
-如果需要查看瓶颈拆分，可以临时加 `--profile-stages`。输出会包含 `read/prewhiten/gpu_cc/stack_runtime/cpu_transfer/align` 等耗时；如果 CUDA 显存不足，local CC batch 会自动减半重试。
-
-再批量叠加:
+多文件夹叠加：
 
 ```bash
-uv run python batch_stack_saved_cc_mat.py \
+./run_multi_folder_stack.sh \
   --input-root ./outputs/cc_tsi_outputs_by_folder \
-  --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
+  --output-root ./outputs/cc_tsi_plot_outputs_by_folder \
   --glob "cc_stack_tsi_*.mat" \
   --stack-size None \
   --interval None \
   --stack-method robust \
   --cc-backend cpu \
   --cc-device cpu \
-  --jobs 8 \
-  --plot-name local_cc_preview.png
+  --jobs 8
 ```
 
-如果只想保存 `restack_*.mat`，不出任何图:
+多文件夹提频散：
 
 ```bash
-uv run python batch_stack_saved_cc_mat.py \
-  --input-root ./outputs/cc_tsi_outputs_by_folder \
-  --output-root ./outputs/cc_tsi_plot_outputs_ChangBai \
-  --glob "cc_stack_tsi_*.mat" \
-  --no-save-summary-plot \
-  --no-save-shot-figures
-```
-
-这里的 `--jobs` 是“多文件夹并行度”:
-
-- `--jobs 1`: 串行逐目录叠加。
-- `--jobs 8`: 最多同时启动 8 个子目录叠加进程，适合多核 CPU。
-- 并行单位是“文件夹”，不是单个文件夹内部的 shot。
-
-这里的 `--cc-backend / --cc-device / --cc-dtype` 是“叠加计算设备”:
-
-- `--cc-backend cpu --cc-device cpu`: 强制走 CPU。
-- `--cc-backend auto --cc-device auto`: 自动选择可用设备。
-- `--cc-backend torch --cc-device mps`: 强制走 Apple Silicon GPU。
-- `--cc-backend torch --cc-device cuda`: 强制走 CUDA GPU。
-- `linear / pws / robust` 都会按你指定的后端执行；如果你请求的 torch 设备不可用，底层会发出 warning 并回退到 CPU。
-
-输出会按相同相对路径写入:
-
-- 输入: `./outputs/cc_tsi_outputs_by_folder/2025-03-27`
-- 输出: `./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27`
-
-再转换成 HDF5:
-
-```bash
-uv run python tools/build_cc_h5_cube.py \
-  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
-  --output-h5 ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_by_date.h5 \
-  --meta-csv ./outputs/cc_tsi_plot_outputs_ChangBai/cc_cube_index.csv
-```
-
-批量提取所有炮的 CC+频散对照图:
-
-```bash
-uv run python tools/extract_dispersion_from_cc_mat.py \
-  --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
-  --output-root ./outputs/dispersion_outputs_ChangBai \
+./run_multi_folder_dispersion.sh \
+  --input-root ./outputs/cc_tsi_plot_outputs_by_folder \
+  --output-root ./outputs/dispersion_outputs_by_folder \
   --config ./config/config_ChangBai/disp_config.jsonc \
   --workers 8
 ```
-
-这里的 `--workers` 是 CPU 多进程并行度，并行单位为单个 `.mat` 文件，因此可以同时跑多个日期/子目录。
-
-只处理单个文件夹:
-
-```bash
-uv run python tools/extract_dispersion_from_cc_mat.py \
-  --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
-  --output-root ./outputs/dispersion_outputs_ChangBai_single \
-  --config ./config/config_ChangBai/disp_config.jsonc
-```
-
-把 `outputs/dispersion/2025-03-23` 下所有图片合成 GIF:
-
-```bash
-uv run --with pillow python tools/create_shot_dispersion_gif.py \
-  --input-root ./outputs/dispersion/2025-03-23 \
-  --all-images \
-  --output-gif ./outputs/dispersion/2025-03-23/dispersion_all.gif
-```
-
-如果图片分布在子目录中，增加 `--recursive`。
-
-把第 179 炮在所有子目录中的频散图合成 GIF:
-
-```bash
-uv run --with pillow python tools/create_shot_dispersion_gif.py \
-  --input-root ./outputs/dispersion_outputs_ChangBai \
-  --shot-index 179 \
-  --output-gif ./outputs/dispersion_outputs_ChangBai/shot_0179_dispersion.gif
-```
-
-## Python 环境
-
-按项目约定，运行 Python 时优先使用项目自己的 `.venv`，并通过 `uv run python ...` 执行。

@@ -16,7 +16,7 @@
 
 运行示例:
 1) CPU 叠加:
-   `uv run python stack_saved_cc_mat.py \
+   `uv run python scripts/stack_saved_cc_mat.py \
       --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
       --glob "cc_stack_tsi_*.mat" \
       --stack-size None \
@@ -25,7 +25,7 @@
       --cc-device cpu`
 
 2) 自动选择可用设备:
-   `uv run python stack_saved_cc_mat.py \
+   `uv run python scripts/stack_saved_cc_mat.py \
       --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
       --glob "cc_stack_tsi_*.mat" \
       --stack-method pws \
@@ -33,7 +33,7 @@
       --cc-device auto`
 
 3) 强制 torch + CUDA:
-   `uv run python stack_saved_cc_mat.py \
+   `uv run python scripts/stack_saved_cc_mat.py \
       --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
       --glob "cc_stack_tsi_*.mat" \
       --stack-method pws \
@@ -42,7 +42,7 @@
       --cc-dtype float32`
 
 4) 只输出 `.mat`，不生成任何图片:
-   `uv run python stack_saved_cc_mat.py \
+   `uv run python scripts/stack_saved_cc_mat.py \
       --input-dir ./outputs/cc_tsi_outputs_by_folder/2025-03-27 \
       --glob "cc_stack_tsi_*.mat" \
       --stack-method robust \
@@ -66,6 +66,8 @@ from scipy.io import loadmat, savemat
 
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.sans-serif"] = ["Times New Roman"]
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 from dasQt.core.dispersion_components.ccf import stack_cc_chunks
 
@@ -411,7 +413,7 @@ def main() -> None:
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "cc_outputs",
+        default=PROJECT_DIR / "outputs/cc_outputs",
         help="保存后 .mat 文件所在目录。",
     )
     parser.add_argument(
@@ -423,7 +425,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "cc_restack_outputs",
+        default=PROJECT_DIR / "outputs/cc_restack_outputs",
         help="叠加结果输出目录。",
     )
     parser.add_argument(

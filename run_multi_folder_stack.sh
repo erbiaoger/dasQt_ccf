@@ -114,7 +114,7 @@ if [[ -z "${INPUT_ROOT}" ]]; then
 fi
 
 CMD=(
-  "${SCRIPT_DIR}/batch_stack_saved_cc_mat.py"
+  "${SCRIPT_DIR}/scripts/batch_stack_saved_cc_mat.py"
   --input-root "${INPUT_ROOT}"
   --output-root "${OUTPUT_ROOT}"
   --glob "${GLOB_PATTERN}"

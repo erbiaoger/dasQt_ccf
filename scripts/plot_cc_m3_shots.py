@@ -21,6 +21,8 @@ from scipy.io import loadmat
 
 from dasQt.utils.imshow import my_cmap, setAxis
 
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
 
 plt.rcParams.update(
     {
@@ -229,7 +231,7 @@ def main() -> None:
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "cc_restack_outputs",
+        default=PROJECT_DIR / "outputs/cc_restack_outputs",
         help="Directory containing restack_*.mat files",
     )
     parser.add_argument(
@@ -241,7 +243,7 @@ def main() -> None:
     parser.add_argument(
         "--dispersion-mat",
         type=Path,
-        default=Path(__file__).resolve().parent / "dispersion_data.mat",
+        default=PROJECT_DIR / "outputs/dispersion_data.mat",
         help="Saved dispersion MAT containing m3_list/f/vmin/dv",
     )
     parser.add_argument(

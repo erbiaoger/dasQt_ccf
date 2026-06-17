@@ -19,16 +19,16 @@ Implementation:
         dasQt.core.dispersion_components.ccf.folder_pipeline
 
 Typical run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/caculate_cc_tsi_from_folder.py \
+    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
         --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc
 
 Time-window run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/caculate_cc_tsi_from_folder.py \
+    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
         --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc \
         --time-start 08:00 --time-end 18:00
 
 GPU/local-shot TSI run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/caculate_cc_tsi_from_folder.py \
+    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
         --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc \
         --cc-enhance tsi \
         --tsi-mode single_shot_local_cc \

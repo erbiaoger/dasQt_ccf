@@ -105,7 +105,7 @@ if [[ -z "${INPUT_DIR}" ]]; then
 fi
 
 CMD=(
-  "${SCRIPT_DIR}/stack_saved_cc_mat.py"
+  "${SCRIPT_DIR}/scripts/stack_saved_cc_mat.py"
   --input-dir "${INPUT_DIR}"
   --glob "${GLOB_PATTERN}"
   --output-dir "${OUTPUT_DIR}"
