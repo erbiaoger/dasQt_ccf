@@ -68,15 +68,15 @@ EOF
   print_common_footer
 }
 
-CONFIG="${SCRIPT_DIR}/config/config_ChangBai/cc_config.jsonc"
+CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
 DATA_FOLDER=""
 OUTPUT_DIR="${SCRIPT_DIR}/outputs/cc_tsi_outputs_single"
-SAVE_EVERY="30"
+SAVE_EVERY="20"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
-CC_PREWHITEN_MODE=""
-CC_PREWHITEN_TILE_CHANNELS=""
+CC_PREWHITEN_MODE="auto"        # 不填默认不传
+CC_PREWHITEN_TILE_CHANNELS=""   # 不填默认不传
 CC_MEMORY_SAFETY_FRACTION=""
 PROFILE_STAGES="0"
 EXTRA_ARGS=()

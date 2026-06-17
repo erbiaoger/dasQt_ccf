@@ -55,7 +55,7 @@ EOF
 
 INPUT_ROOT=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/dispersion_outputs_by_folder"
-CONFIG="${SCRIPT_DIR}/config/config_ChangBai/disp_config.jsonc"
+CONFIG="${SCRIPT_DIR}/config/disp_config.jsonc"
 GLOB_PATTERN="restack_*.mat"
 METHOD=""
 SHOT_START=""

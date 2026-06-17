@@ -81,7 +81,7 @@ EOF
   print_common_footer
 }
 
-CONFIG="${SCRIPT_DIR}/config/config_ChangBai/cc_config.jsonc"
+CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
 ROOT_DATA_DIR=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder"
 SAVE_EVERY="30"
