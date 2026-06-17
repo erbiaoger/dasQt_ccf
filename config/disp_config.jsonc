@@ -3,7 +3,7 @@
     // Minimum phase velocity in m/s.
     "cmin": 100.0,
     // Maximum phase velocity in m/s.
-    "cmax": 500.0,
+    "cmax": 800.0,
     // Velocity step in m/s.
     "dc": 1.0,
     // Minimum frequency in Hz.

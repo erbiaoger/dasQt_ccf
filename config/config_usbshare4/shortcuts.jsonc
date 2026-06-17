@@ -1,2 +1,0 @@
-// Optional keybinding overrides. Leave {} to use the built-in defaults. Map a key sequence to an action name, e.g. {"Ctrl+Space": "toggle_animation"}.
-{}
