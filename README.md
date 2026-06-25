@@ -66,10 +66,13 @@ Python CLI 已统一移动到 [scripts](/Users/zhangzhiyu/MyProjects/dasQt-examp
   --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
   --output-dir ./outputs/cc_tsi_outputs_single \
   --save-every 30 \
+  --get-disp1-compatible \
   --start-index 0 \
   --end-index 1438 \
   -- --cc-enhance tsi --tsi-progress
 ```
+
+说明：这里的 `--start-index` 是锚点文件索引。开启 `--get-disp1-compatible` 后，实际处理的是它后面的文件。
 
 多文件夹计算：
 
@@ -79,11 +82,14 @@ Python CLI 已统一移动到 [scripts](/Users/zhangzhiyu/MyProjects/dasQt-examp
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
   --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
+  --get-disp1-compatible \
   --date-start 2025-03-27 \
   --time-start 08:00 \
   --time-end 18:00 \
   -- --cc-enhance tsi --tsi-progress
 ```
+
+多文件夹批处理同样遵循锚点语义：`start-index` 表示当前文件，真正参与计算的是后续文件。
 
 多文件夹叠加：
 

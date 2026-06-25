@@ -29,6 +29,8 @@
 #   --output-dir PATH   Output folder for grouped MAT/JSON files.
 #   --save-every N      Save one grouped output every N valid files. Default: 30
 #   --start-index N     Start file index after sorting/filtering. Default: 0
+#   --get-disp1-compatible / --no-get-disp1-compatible
+#                     Default: enabled. Treat start-index as the anchor file and process the following files.
 #   --end-index N       End file index (inclusive). Default: unset
 #   --workers N         Worker count passed to Python CLI. Default: 1
 #   --cc-prewhiten-mode MODE    auto | full | tiled | off. Default: unset
@@ -54,6 +56,8 @@ Options:
   --output-dir PATH   Default: ${SCRIPT_DIR}/outputs/cc_tsi_outputs_single
   --save-every N      Default: 30
   --start-index N     Default: 0
+  --get-disp1-compatible
+                     Default: on. Treat start-index as the anchor file.
   --end-index N       Default: unset
   --workers N         Default: 1
   --cc-prewhiten-mode MODE
@@ -75,6 +79,7 @@ SAVE_EVERY="20"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
+GET_DISP1_COMPATIBLE="1"     # 默认开启：start-index 作为锚点文件，实际从后一个文件开始处理
 CC_PREWHITEN_MODE="auto"        # 不填默认不传
 CC_PREWHITEN_TILE_CHANNELS=""   # 不填默认不传
 CC_MEMORY_SAFETY_FRACTION=""
@@ -88,6 +93,8 @@ while [[ $# -gt 0 ]]; do
     --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
     --save-every) SAVE_EVERY="$2"; shift 2 ;;
     --start-index) START_INDEX="$2"; shift 2 ;;
+    --get-disp1-compatible) GET_DISP1_COMPATIBLE="1"; shift ;;
+    --no-get-disp1-compatible) GET_DISP1_COMPATIBLE="0"; shift ;;
     --end-index) END_INDEX="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
     --cc-prewhiten-mode) CC_PREWHITEN_MODE="$2"; shift 2 ;;
@@ -115,6 +122,10 @@ CMD=(
   --start-index "${START_INDEX}"
   --workers "${WORKERS}"
 )
+
+if [[ "${GET_DISP1_COMPATIBLE}" == "1" ]]; then
+  CMD+=(--start-after-index)
+fi
 
 if [[ -n "${END_INDEX}" ]]; then
   CMD+=(--end-index "${END_INDEX}")

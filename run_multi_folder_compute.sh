@@ -30,6 +30,8 @@
 #   --output-root PATH     Output root. Default: ./outputs/cc_tsi_outputs_by_folder
 #   --save-every N         Passed to single-folder compute. Default: 30
 #   --start-index N        Passed to single-folder compute. Default: 0
+#   --get-disp1-compatible / --no-get-disp1-compatible
+#                        Default: enabled. start-index becomes the anchor file.
 #   --end-index N          Passed to single-folder compute. Default: unset
 #   --workers N            Passed to single-folder compute. Default: 1
 #   --cc-prewhiten-mode MODE    Passed to single-folder compute. Default: unset
@@ -61,6 +63,8 @@ Options:
   --output-root PATH      Default: ${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder
   --save-every N          Default: 30
   --start-index N         Default: 0
+  --get-disp1-compatible
+                         Default: on. start-index becomes the anchor file.
   --end-index N           Default: unset
   --workers N             Default: 1
   --cc-prewhiten-mode MODE
@@ -88,6 +92,7 @@ SAVE_EVERY="30"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
+GET_DISP1_COMPATIBLE="1"  # 默认开启：批处理窗口按 Get Disp1 语义取后续文件
 CC_PREWHITEN_MODE=""
 CC_PREWHITEN_TILE_CHANNELS=""
 CC_MEMORY_SAFETY_FRACTION=""
@@ -107,6 +112,8 @@ while [[ $# -gt 0 ]]; do
     --output-root) OUTPUT_ROOT="$2"; shift 2 ;;
     --save-every) SAVE_EVERY="$2"; shift 2 ;;
     --start-index) START_INDEX="$2"; shift 2 ;;
+    --get-disp1-compatible) GET_DISP1_COMPATIBLE="1"; shift ;;
+    --no-get-disp1-compatible) GET_DISP1_COMPATIBLE="0"; shift ;;
     --end-index) END_INDEX="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
     --cc-prewhiten-mode) CC_PREWHITEN_MODE="$2"; shift 2 ;;
@@ -140,6 +147,12 @@ CMD=(
   --start-index "${START_INDEX}"
   --workers "${WORKERS}"
 )
+
+if [[ "${GET_DISP1_COMPATIBLE}" == "1" ]]; then
+  CMD+=(--get-disp1-compatible)
+else
+  CMD+=(--no-get-disp1-compatible)
+fi
 
 if [[ -n "${END_INDEX}" ]]; then
   CMD+=(--end-index "${END_INDEX}")

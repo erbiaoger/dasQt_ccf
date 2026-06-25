@@ -10,10 +10,13 @@
   --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
   --output-dir ./outputs/cc_tsi_outputs_single \
   --save-every 30 \
+  --get-disp1-compatible \
   --start-index 0 \
   --end-index 1438 \
   -- --cc-enhance tsi --tsi-progress
 ```
+
+`--start-index` 表示锚点文件索引；开启 `--get-disp1-compatible` 后，实际处理从下一个文件开始。
 
 ## 多文件夹计算
 
@@ -23,11 +26,14 @@
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
   --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
+  --get-disp1-compatible \
   --date-start 2025-03-27 \
   --time-start 08:00 \
   --time-end 18:00 \
   -- --cc-enhance tsi --tsi-progress --profile-stages
 ```
+
+多文件夹批处理也按锚点语义选文件，避免和 Get Disp1 的窗口错位。
 
 ## 单文件夹叠加
 

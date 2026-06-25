@@ -56,6 +56,8 @@ Core parameters:
         Save one grouped output for every N valid files.
     --start-index N, --end-index N
         Select a 0-based inclusive file-index range after sorting/filtering.
+    --start-after-index
+        Treat --start-index as the anchor file and start from the next file.
     --workers N
         Number of worker processes. GPU modes force workers=1 for stability.
     --refresh-file-index

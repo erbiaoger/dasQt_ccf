@@ -10,10 +10,13 @@
   --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
   --output-dir ./outputs/cc_tsi_outputs_ChangBai \
   --save-every 30 \
+  --get-disp1-compatible \
   --start-index 0 \
   --end-index 1438 \
   -- --cc-enhance tsi --tsi-progress
 ```
+
+`--start-index` 是锚点文件索引；开启 `--get-disp1-compatible` 后，实际处理从后一个文件开始。
 
 ## 2. 多文件夹计算
 
@@ -23,11 +26,14 @@
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
   --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
+  --get-disp1-compatible \
   --date-start 2025-03-27 \
   --time-start 08:00 \
   --time-end 18:00 \
   -- --cc-enhance tsi --tsi-progress
 ```
+
+批处理脚本会把该开关透传到底层单文件夹计算脚本，避免窗口错位。
 
 推荐 GPU 相关配置放在 `config/config_ChangBai/cc_config.jsonc` 内维护。
 

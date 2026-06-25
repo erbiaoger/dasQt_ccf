@@ -21,6 +21,8 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
       --config /Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf/config/cc_config.jsonc \
       --cc-enhance tsi --tsi-mode single_shot_local_cc --save-every 5`
 
+   默认开启 Get Disp1 兼容模式：`--start-index` 只作为锚点文件索引，实际从后一个文件开始处理。
+
 2) 先预览命令，不执行:
    `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /Volumes/CSIM_LAB/DATA/DAS/JLU/JLU-2025-01-07 \
@@ -246,6 +248,7 @@ def build_single_command(
     output_dir: Path,
     save_every: int,
     start_index: int,
+    get_disp1_compatible: bool,
     end_index: int | None,
     workers: int | None,
     cc_enhance: str | None,
@@ -269,6 +272,8 @@ def build_single_command(
         "--start-index",
         str(int(start_index)),
     ]
+    if get_disp1_compatible:
+        cmd.append("--start-after-index")
     if end_index is not None:
         cmd.extend(["--end-index", str(int(end_index))])
     if workers is not None:
@@ -346,6 +351,18 @@ def main() -> None:
         help="透传到单目录脚本的 --start-index。",
     )
     parser.add_argument(
+        "--get-disp1-compatible",
+        dest="get_disp1_compatible",
+        action="store_true",
+        help="将 start-index 视为锚点文件，实际从其后一个文件开始处理；默认开启。",
+    )
+    parser.add_argument(
+        "--no-get-disp1-compatible",
+        dest="get_disp1_compatible",
+        action="store_false",
+        help="关闭 Get Disp1 兼容模式，恢复包含起始文件的旧行为。",
+    )
+    parser.add_argument(
         "--date-start",
         type=str,
         default=None,
@@ -403,6 +420,7 @@ def main() -> None:
         default=None,
         help="最多处理前 N 个匹配子目录（调试用）。",
     )
+    parser.set_defaults(get_disp1_compatible=True)
 
     # parse_known_args: 未显式声明的参数将原样透传给单目录脚本
     args, forward_args = parser.parse_known_args()
@@ -447,6 +465,7 @@ def main() -> None:
     print(f"[INFO] output root   : {output_root}")
     print(f"[INFO] config        : {config}")
     print(f"[INFO] single script : {single_script}")
+    print(f"[INFO] get disp1     : {bool(args.get_disp1_compatible)}")
     print(f"[INFO] recursive     : {bool(args.recursive)}")
     print(f"[INFO] file list name: {args.file_list_name}")
     if date_start is not None:
@@ -468,10 +487,11 @@ def main() -> None:
 
     for idx, job in enumerate(jobs, start=1):
         max_index = int(job.file_count) - 1
-        if int(args.start_index) > max_index:
+        effective_start_index = int(args.start_index) + (1 if args.get_disp1_compatible else 0)
+        if effective_start_index > max_index:
             skipped += 1
             print(
-                f"[SKIP] {job.folder.name}: start-index={args.start_index} > max-index={max_index} "
+                f"[SKIP] {job.folder.name}: effective-start-index={effective_start_index} > max-index={max_index} "
                 f"(files={job.file_count})"
             )
             continue
@@ -491,6 +511,7 @@ def main() -> None:
             output_dir=job.output_dir,
             save_every=int(args.save_every),
             start_index=int(args.start_index),
+            get_disp1_compatible=bool(args.get_disp1_compatible),
             end_index=effective_end_index,
             workers=args.workers,
             cc_enhance=args.cc_enhance,
