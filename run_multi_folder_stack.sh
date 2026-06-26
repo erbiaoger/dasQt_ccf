@@ -21,22 +21,22 @@
 #     --cc-device cpu \
 #     --jobs 8
 #
-# Parameters:
-#   --input-root PATH    Required. Root folder containing many CC/TSI result folders.
-#   --output-root PATH   Output root for restack results.
-#   --glob PATTERN       MAT filename pattern. Default: cc_stack_tsi_*.mat
-#   --folder-glob GLOB   Optional relative-folder filter, e.g. 2025-03-*.
-#   --stack-size VALUE   Default: None
-#   --interval VALUE     Default: None
-#   --start-index N      Default: 0
-#   --stack-method NAME  Default: robust
-#   --cc-backend NAME    Default: cpu
-#   --cc-device NAME     Default: cpu
-#   --cc-dtype NAME      Default: float32
-#   --plot-name NAME     Default: local_cc_preview.png
-#   --jobs N             Parallel folder count. Default: 8
-#   --no-recursive       Disable recursive scan.
-#   --help               Show this message.
+# 参数：
+#   --input-root PATH    必填。包含多个 CC/TSI 结果文件夹的根目录。
+#   --output-root PATH   重新堆叠结果输出根目录。
+#   --glob PATTERN       MAT 文件名模式。默认：cc_stack_tsi_*.mat
+#   --folder-glob GLOB   可选的相对文件夹过滤模式，例如 2025-03-*。
+#   --stack-size VALUE   堆叠窗口文件数。默认：None
+#   --interval VALUE     窗口步长。默认：None
+#   --start-index N      起始 MAT 文件索引。默认：0
+#   --stack-method NAME  堆叠方法。默认：robust
+#   --cc-backend NAME    计算后端。默认：cpu
+#   --cc-device NAME     计算设备。默认：cpu
+#   --cc-dtype NAME      数据类型。默认：float32
+#   --plot-name NAME     预览图文件名。默认：local_cc_preview.png
+#   --jobs N             并行处理文件夹数。默认：8
+#   --no-recursive       关闭递归扫描。
+#   --help               显示帮助信息。
 
 set -euo pipefail
 

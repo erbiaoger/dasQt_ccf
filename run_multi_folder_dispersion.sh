@@ -17,16 +17,16 @@
 #     --workers 8 \
 #     -- --save-npz --overwrite
 #
-# Parameters:
-#   --input-root PATH    Required. Root folder scanned recursively for `.mat`.
-#   --output-root PATH   Output root for dispersion images/cubes.
-#   --config PATH        Dispersion config JSONC. Default: ./config/config_ChangBai/disp_config.jsonc
-#   --glob PATTERN       MAT filename pattern. Default: restack_*.mat
-#   --method NAME        Optional method override.
-#   --shot-start N       Optional inclusive shot start.
-#   --shot-stop N        Optional exclusive shot stop.
-#   --workers N          CPU process count. Default: 8
-#   --help               Show this message.
+# 参数：
+#   --input-root PATH    必填。递归扫描 `.mat` 文件的根目录。
+#   --output-root PATH   颜色谱图/立方体输出根目录。
+#   --config PATH        颜色谱图配置 JSONC。默认：./config/config_ChangBai/disp_config.jsonc
+#   --glob PATTERN       MAT 文件名模式。默认：restack_*.mat
+#   --method NAME        可选的方法覆盖参数。
+#   --shot-start N       可选。包含的起始 shot 编号。
+#   --shot-stop N        可选。不包含的结束 shot 编号。
+#   --workers N          CPU 进程数。默认：8
+#   --help               显示帮助信息。
 
 set -euo pipefail
 

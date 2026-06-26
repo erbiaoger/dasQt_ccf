@@ -20,20 +20,20 @@
 #     --cc-backend cpu \
 #     --cc-device cpu
 #
-# Parameters:
-#   --input-dir PATH     Required. Folder containing saved `cc_stack*.mat`.
-#   --output-dir PATH    Output folder for `restack*.mat` and figures.
-#   --glob PATTERN       MAT filename pattern. Default: cc_stack_tsi_*.mat
-#   --stack-size VALUE   Window file count. Use None for all files. Default: None
-#   --interval VALUE     Window step. Use None for single group. Default: None
-#   --start-index N      Start MAT file index. Default: 0
-#   --stack-method NAME  pws | robust | linear | mean. Default: robust
-#   --cc-backend NAME    auto | cpu | torch. Default: cpu
-#   --cc-device NAME     auto | cpu | mps | cuda. Default: cpu
-#   --cc-dtype NAME      float32 | float64. Default: float32
-#   --plot-name NAME     Summary plot filename. Default: local_cc_preview.png
-#   --show               Save and also show figures.
-#   --help               Show this message.
+# 参数：
+#   --input-dir PATH     必填。包含已保存 `cc_stack*.mat` 的目录。
+#   --output-dir PATH    `restack*.mat` 和图像的输出目录。
+#   --glob PATTERN       MAT 文件名模式。默认：cc_stack_tsi_*.mat
+#   --stack-size VALUE   窗口文件数。使用 None 表示全部文件。默认：None
+#   --interval VALUE     窗口步长。使用 None 表示单组。默认：None
+#   --start-index N      MAT 文件起始索引。默认：0
+#   --stack-method NAME  堆叠方法：pws | robust | linear | mean。默认：robust
+#   --cc-backend NAME    计算后端：auto | cpu | torch。默认：cpu
+#   --cc-device NAME     计算设备：auto | cpu | mps | cuda。默认：cpu
+#   --cc-dtype NAME      数据类型：float32 | float64。默认：float32
+#   --plot-name NAME     汇总图文件名。默认：local_cc_preview.png
+#   --show               保存后同时显示图像。
+#   --help               显示帮助信息。
 
 set -euo pipefail
 

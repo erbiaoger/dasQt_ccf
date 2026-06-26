@@ -24,15 +24,15 @@
 #     --output-gif ./outputs/dispersion_outputs_by_folder/shot_0179_dispersion.gif \
 #     --recursive
 #
-# Parameters:
-#   --input-root PATH     Required. Image folder or dispersion output root.
-#   --all-images          Collect all images under input-root.
-#   --shot-index N        Collect one shot_XXXX_dispersion.png across folders.
-#   --recursive           Used with --all-images to scan subfolders recursively.
-#   --output-gif PATH     Optional output GIF path.
-#   --duration-ms N       Optional frame duration in ms.
-#   --loop N              Optional GIF loop count. 0 means infinite.
-#   --help                Show this message.
+# 参数：
+#   --input-root PATH     必填。图片目录或颜色谱输出根目录。
+#   --all-images          收集 input-root 下的所有图片。
+#   --shot-index N        收集跨文件夹的某个 shot_XXXX_dispersion.png。
+#   --recursive           配合 --all-images 使用，递归扫描子目录。
+#   --output-gif PATH     可选。输出 GIF 路径。
+#   --duration-ms N       可选。每帧持续时间，单位毫秒。
+#   --loop N              可选。GIF 循环次数，0 表示无限循环。
+#   --help                显示帮助信息。
 
 set -euo pipefail
 

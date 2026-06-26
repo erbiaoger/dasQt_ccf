@@ -18,16 +18,16 @@
 #     --shot-stop 200 \
 #     -- --save-npz --overwrite
 #
-# Parameters:
-#   --input-dir PATH     Required. Folder containing `.mat` files.
-#   --output-root PATH   Output root for dispersion PNG/NPZ.
-#   --config PATH        Dispersion config JSONC. Default: ./config/config_ChangBai/disp_config.jsonc
-#   --glob PATTERN       MAT filename pattern. Default: restack_*.mat
-#   --method NAME        Optional method override passed to Python CLI.
-#   --shot-start N       Optional inclusive shot start.
-#   --shot-stop N        Optional exclusive shot stop.
-#   --workers N          CPU worker count. Default: 1
-#   --help               Show this message.
+# 参数：
+#   --input-dir PATH     必填。包含 `.mat` 文件的目录。
+#   --output-root PATH   颜色谱图 PNG/NPZ 输出根目录。
+#   --config PATH        颜色谱图配置 JSONC。默认：./config/config_ChangBai/disp_config.jsonc
+#   --glob PATTERN       MAT 文件名模式。默认：restack_*.mat
+#   --method NAME        传给 Python CLI 的可选方法覆盖参数。
+#   --shot-start N       可选。包含的起始 shot 编号。
+#   --shot-stop N        可选。不包含的结束 shot 编号。
+#   --workers N          CPU 工作进程数。默认：1
+#   --help               显示帮助信息。
 
 set -euo pipefail
 

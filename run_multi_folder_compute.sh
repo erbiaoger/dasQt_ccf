@@ -24,27 +24,27 @@
 #     --profile-stages \
 #     -- --cc-enhance tsi --refresh-file-index
 #
-# Parameters:
-#   --config PATH          Batch config. Default: ./config/config_ChangBai/cc_config.jsonc
-#   --root-data-dir PATH   Required. Root folder whose subfolders contain DAS files.
-#   --output-root PATH     Output root. Default: ./outputs/cc_tsi_outputs_by_folder
-#   --save-every N         Passed to single-folder compute. Default: 30
-#   --start-index N        Passed to single-folder compute. Default: 0
+# 参数：
+#   --config PATH          批处理配置文件。默认：./config/config_ChangBai/cc_config.jsonc
+#   --root-data-dir PATH   必填。包含多个子文件夹的 DAS 根目录。
+#   --output-root PATH     输出根目录。默认：./outputs/cc_tsi_outputs_by_folder
+#   --save-every N         传给单文件计算的保存步长。默认：30
+#   --start-index N        传给单文件计算的起始索引。默认：0
 #   --get-disp1-compatible / --no-get-disp1-compatible
-#                        Default: enabled. start-index becomes the anchor file.
-#   --end-index N          Passed to single-folder compute. Default: unset
-#   --workers N            Passed to single-folder compute. Default: 1
-#   --cc-prewhiten-mode MODE    Passed to single-folder compute. Default: unset
-#   --cc-prewhiten-tile-channels N  Passed to single-folder compute. Default: unset
-#   --cc-memory-safety-fraction X   Passed to single-folder compute. Default: unset
-#   --profile-stages       Passed to single-folder compute.
-#   --date-start YYYY-MM-DD  Optional folder date filter.
-#   --time-start HH:MM     Optional file time lower bound. Must pair with --time-end.
-#   --time-end HH:MM       Optional file time upper bound. Must pair with --time-start.
-#   --recursive            Recursively scan all nested subfolders.
-#   --include-root         Also process the root folder itself if it directly contains data files.
-#   --file-list-name NAME  Optional per-folder manifest filename.
-#   --help                 Show this message.
+#                        默认开启。把 start-index 当作锚点文件。
+#   --end-index N          传给单文件计算的结束索引。默认：不设置
+#   --workers N            传给单文件计算的工作进程数。默认：1
+#   --cc-prewhiten-mode MODE    传给单文件计算的预白化模式。默认：不设置
+#   --cc-prewhiten-tile-channels N  传给单文件计算的 tiled 通道数。默认：不设置
+#   --cc-memory-safety-fraction X   传给单文件计算的 CUDA 内存安全系数。默认：不设置
+#   --profile-stages       传给单文件计算的阶段日志开关。
+#   --date-start YYYY-MM-DD  可选。日期过滤下限。
+#   --time-start HH:MM     可选。时间过滤下限，需与 --time-end 同时使用。
+#   --time-end HH:MM       可选。时间过滤上限，需与 --time-start 同时使用。
+#   --recursive            递归扫描所有子文件夹。
+#   --include-root         也处理 root-data-dir 本身（如果它直接包含数据文件）。
+#   --file-list-name NAME  可选。每个子文件夹使用的清单文件名。
+#   --help                 显示帮助信息。
 
 set -euo pipefail
 
@@ -96,7 +96,7 @@ GET_DISP1_COMPATIBLE="1"  # 默认开启：批处理窗口按 Get Disp1 语义�
 CC_PREWHITEN_MODE=""
 CC_PREWHITEN_TILE_CHANNELS=""
 CC_MEMORY_SAFETY_FRACTION=""
-PROFILE_STAGES="0"
+PROFILE_STAGES="0"  # 阶段日志开关：0 关闭，1 开启
 DATE_START=""
 TIME_START=""
 TIME_END=""

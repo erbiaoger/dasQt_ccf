@@ -23,21 +23,21 @@
 #     --profile-stages \
 #     -- --cc-enhance tsi --tsi-mode single_shot_local_cc --tsi-progress
 #
-# Parameters:
-#   --config PATH       CC/TSI JSONC config. Default: ./config/config_ChangBai/cc_config.jsonc
-#   --data-folder PATH  Required. Folder containing DAS files.
-#   --output-dir PATH   Output folder for grouped MAT/JSON files.
-#   --save-every N      Save one grouped output every N valid files. Default: 30
-#   --start-index N     Start file index after sorting/filtering. Default: 0
+# 参数：
+#   --config PATH       CC/TSI JSONC 配置文件。默认：./config/config_ChangBai/cc_config.jsonc
+#   --data-folder PATH  必填。包含 DAS 数据文件的目录。
+#   --output-dir PATH   群组 MAT/JSON 输出目录。
+#   --save-every N      每累计 N 个有效文件保存一次结果。默认：30
+#   --start-index N     排序/过滤后的起始文件索引。默认：0
 #   --get-disp1-compatible / --no-get-disp1-compatible
-#                     Default: enabled. Treat start-index as the anchor file and process the following files.
-#   --end-index N       End file index (inclusive). Default: unset
-#   --workers N         Worker count passed to Python CLI. Default: 1
-#   --cc-prewhiten-mode MODE    auto | full | tiled | off. Default: unset
-#   --cc-prewhiten-tile-channels N  Tile width for tiled prewhiten. Default: unset
-#   --cc-memory-safety-fraction X   Fraction of free CUDA memory allowed for planning. Default: unset
-#   --profile-stages    Print per-file stage profiling.
-#   --help              Show this message.
+#                     默认开启。把 start-index 当作锚点文件，并处理其后的文件。
+#   --end-index N       结束文件索引（包含）。默认：不设置
+#   --workers N         传给 Python CLI 的工作进程数。默认：1
+#   --cc-prewhiten-mode MODE    auto | full | tiled | off。默认：不设置
+#   --cc-prewhiten-tile-channels N  tiled 预白化的分块通道数。默认：不设置
+#   --cc-memory-safety-fraction X   规划时允许使用的 CUDA 空闲内存比例。默认：不设置
+#   --profile-stages    打印每个文件的阶段耗时日志。
+#   --help              显示帮助信息。
 
 set -euo pipefail
 
@@ -80,10 +80,10 @@ START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
 GET_DISP1_COMPATIBLE="1"     # 默认开启：start-index 作为锚点文件，实际从后一个文件开始处理
-CC_PREWHITEN_MODE="auto"        # 不填默认不传
-CC_PREWHITEN_TILE_CHANNELS=""   # 不填默认不传
-CC_MEMORY_SAFETY_FRACTION=""
-PROFILE_STAGES="0"
+CC_PREWHITEN_MODE="auto"    # 预白化模式默认值；留空则不额外传给 Python
+CC_PREWHITEN_TILE_CHANNELS=""   # tiled 预白化的通道数；留空则不额外传给 Python
+CC_MEMORY_SAFETY_FRACTION=""    # CUDA 空闲内存安全系数；留空则不额外传给 Python
+PROFILE_STAGES="0"    # 阶段日志开关：0 关闭，1 开启
 EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
