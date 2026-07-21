@@ -50,6 +50,9 @@ Core parameters:
     --time-start HH:MM, --time-end HH:MM
         Keep only files whose filename timestamp falls in the half-open daily
         window [time-start, time-end). Both arguments must be provided together.
+    --filename-time-format FORMAT
+        Python datetime.strptime format used to find the timestamp anywhere in
+        each filename, for example %%Y%%m%%d_%%H%%M%%S.
     --output-dir PATH
         Folder for grouped .mat outputs and diagnostics.
     --save-every N

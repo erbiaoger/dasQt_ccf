@@ -37,7 +37,8 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
    `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
       --config ./config_ChangBai/cc_config.jsonc \
-      --time-start 08:00 --time-end 18:00`
+      --time-start 08:00 --time-end 18:00 \
+      --filename-time-format '%Y%m%d_%H%M%S'`
 
 5) 从指定日期开始处理:
    `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
@@ -51,7 +52,9 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
 - 如需完全绕开每个数据子目录的扫描，可在每个子目录内放一个固定名字的
   manifest 文件，并配合 `--file-list-name` 使用。
 - 如需仅计算每天固定时段，可加 `--time-start HH:MM --time-end HH:MM`，
-  当前 ChangBai 文件按 `YYYY-MM-DD-HH-MM-SS-out.dat` 从文件名解析时间。
+  并用 `--filename-time-format` 指定文件名时间格式。该格式使用
+  Python `datetime.strptime` 语法，并可匹配文件名任意位置；例如
+  `G0060..._20260603_235022.778.h5` 使用 `%Y%m%d_%H%M%S`。
 
 输出结果:
 - 每个被处理的子目录对应一个输出目录:
@@ -76,6 +79,12 @@ from typing import Sequence
 
 SUPPORTED_SUFFIXES = (".pkl", ".pickle", ".tdms", ".h5", ".hdf5", ".segy", ".sgy", ".dat")
 FILENAME_TIME_FORMAT = "%Y-%m-%d-%H-%M-%S"
+_STRPTIME_DIRECTIVE_PATTERNS = {
+    "Y": r"\d{4}", "y": r"\d{2}", "m": r"\d{2}", "d": r"\d{2}",
+    "H": r"\d{2}", "I": r"\d{2}", "M": r"\d{2}", "S": r"\d{2}",
+    "f": r"\d{1,6}", "j": r"\d{3}", "U": r"\d{2}", "W": r"\d{2}",
+    "V": r"\d{2}", "w": r"\d", "u": r"\d", "p": r"[AaPp][Mm]", "%": r"%",
+}
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -123,30 +132,64 @@ def _extract_folder_date(folder: Path, root_data_dir: Path) -> dt_date | None:
     return None
 
 
-def parse_timestamp_from_filename(path: Path) -> datetime:
-    name = path.name
-    if len(name) < 19 or name[19] != "-":
-        raise ValueError(
-            f"Cannot parse timestamp from filename: {path.name!r}. "
-            f"Expected leading timestamp format '{FILENAME_TIME_FORMAT}-...'."
-        )
-    try:
-        return datetime.strptime(name[:19], FILENAME_TIME_FORMAT)
-    except ValueError as exc:
-        raise ValueError(
-            f"Cannot parse timestamp from filename: {path.name!r}. "
-            f"Expected leading timestamp format '{FILENAME_TIME_FORMAT}-...'."
-        ) from exc
+def _strptime_format_to_regex(filename_time_format: str) -> str:
+    import re
+
+    parts: list[str] = []
+    index = 0
+    while index < len(filename_time_format):
+        if filename_time_format[index] != "%":
+            parts.append(re.escape(filename_time_format[index]))
+            index += 1
+            continue
+        if index + 1 >= len(filename_time_format):
+            raise ValueError("filename-time-format cannot end with a bare '%' character.")
+        directive = filename_time_format[index + 1]
+        if directive not in _STRPTIME_DIRECTIVE_PATTERNS:
+            raise ValueError(
+                f"Unsupported directive '%{directive}' in filename-time-format "
+                f"{filename_time_format!r}."
+            )
+        parts.append(_STRPTIME_DIRECTIVE_PATTERNS[directive])
+        index += 2
+    return "".join(parts)
 
 
-def _in_time_window(path: Path, *, time_start: dt_time | None, time_end: dt_time | None) -> bool:
+def parse_timestamp_from_filename(
+    path: Path,
+    filename_time_format: str = FILENAME_TIME_FORMAT,
+) -> datetime:
+    import re
+
+    if not str(filename_time_format).strip():
+        raise ValueError("filename-time-format cannot be empty when time filtering is enabled.")
+    pattern = re.compile(_strptime_format_to_regex(str(filename_time_format)))
+    for match in pattern.finditer(path.name):
+        try:
+            return datetime.strptime(match.group(0), str(filename_time_format))
+        except ValueError:
+            continue
+    raise ValueError(
+        f"Cannot parse timestamp from filename: {path.name!r}. "
+        f"Expected a timestamp matching filename-time-format {filename_time_format!r} "
+        "somewhere in the filename."
+    )
+
+
+def _in_time_window(
+    path: Path,
+    *,
+    time_start: dt_time | None,
+    time_end: dt_time | None,
+    filename_time_format: str,
+) -> bool:
     if time_start is None and time_end is None:
         return True
     if time_start is None or time_end is None:
         raise ValueError("Both --time-start and --time-end must be provided together.")
     if time_start >= time_end:
         raise ValueError("--time-start must be earlier than --time-end. Cross-midnight windows are not supported.")
-    tod = parse_timestamp_from_filename(path).time()
+    tod = parse_timestamp_from_filename(path, filename_time_format=filename_time_format).time()
     return time_start <= tod < time_end
 
 
@@ -155,6 +198,7 @@ def _count_supported_files(
     *,
     time_start: dt_time | None = None,
     time_end: dt_time | None = None,
+    filename_time_format: str = FILENAME_TIME_FORMAT,
 ) -> int:
     count = 0
     with os.scandir(folder) as entries:
@@ -166,6 +210,7 @@ def _count_supported_files(
                 path,
                 time_start=time_start,
                 time_end=time_end,
+                filename_time_format=filename_time_format,
             ):
                 count += 1
     return count
@@ -176,6 +221,7 @@ def _count_manifest_entries(
     *,
     time_start: dt_time | None = None,
     time_end: dt_time | None = None,
+    filename_time_format: str = FILENAME_TIME_FORMAT,
 ) -> int:
     count = 0
     for raw_line in file_list_path.read_text(encoding="utf-8").splitlines():
@@ -187,6 +233,7 @@ def _count_manifest_entries(
             path,
             time_start=time_start,
             time_end=time_end,
+            filename_time_format=filename_time_format,
         ):
             count += 1
     return count
@@ -201,6 +248,7 @@ def discover_jobs(
     date_start: dt_date | None = None,
     time_start: dt_time | None = None,
     time_end: dt_time | None = None,
+    filename_time_format: str = FILENAME_TIME_FORMAT,
 ) -> list[FolderJob]:
     if recursive:
         folders = sorted(p for p in root_data_dir.rglob("*") if p.is_dir())
@@ -222,9 +270,19 @@ def discover_jobs(
             if not candidate.exists() or not candidate.is_file():
                 continue
             file_list_path = candidate
-            file_count = _count_manifest_entries(candidate, time_start=time_start, time_end=time_end)
+            file_count = _count_manifest_entries(
+                candidate,
+                time_start=time_start,
+                time_end=time_end,
+                filename_time_format=filename_time_format,
+            )
         else:
-            file_count = _count_supported_files(folder, time_start=time_start, time_end=time_end)
+            file_count = _count_supported_files(
+                folder,
+                time_start=time_start,
+                time_end=time_end,
+                filename_time_format=filename_time_format,
+            )
         if file_count <= 0:
             continue
         rel = folder.relative_to(root_data_dir)
@@ -256,6 +314,7 @@ def build_single_command(
     file_list: Path | None,
     time_start: str | None,
     time_end: str | None,
+    filename_time_format: str,
     forward_args: Sequence[str],
 ) -> list[str]:
     cmd = [
@@ -288,6 +347,8 @@ def build_single_command(
         cmd.extend(["--time-start", str(time_start)])
     if time_end is not None:
         cmd.extend(["--time-end", str(time_end)])
+    if filename_time_format:
+        cmd.extend(["--filename-time-format", str(filename_time_format)])
 
     # 任意额外参数透传给原脚本（例如 --tsi-mode, --tsi-shot-batch-size, --tsi-progress 等）
     cmd.extend(list(forward_args))
@@ -381,6 +442,15 @@ def main() -> None:
         help="仅保留文件名时间 < HH:MM 的文件。需要同时提供 --time-start。",
     )
     parser.add_argument(
+        "--filename-time-format",
+        type=str,
+        default=FILENAME_TIME_FORMAT,
+        help=(
+            "文件名中时间戳的 datetime.strptime 格式，可匹配文件名任意位置；"
+            "例如 ChangBai 文件使用 %%Y%%m%%d_%%H%%M%%S。"
+        ),
+    )
+    parser.add_argument(
         "--end-index",
         type=int,
         default=None,
@@ -457,6 +527,7 @@ def main() -> None:
         date_start=date_start,
         time_start=time_start,
         time_end=time_end,
+        filename_time_format=args.filename_time_format,
     )
     if args.max_folders is not None:
         jobs = jobs[: max(int(args.max_folders), 0)]
@@ -472,6 +543,7 @@ def main() -> None:
         print(f"[INFO] date start   : {date_start.isoformat()}")
     if time_start is not None and time_end is not None:
         print(f"[INFO] time window  : [{time_start.strftime('%H:%M')}, {time_end.strftime('%H:%M')})")
+        print(f"[INFO] filename time format: {args.filename_time_format}")
     print(f"[INFO] include root  : {bool(args.include_root)}")
     print(f"[INFO] matched dirs  : {len(jobs)}")
     if forward_args:
@@ -519,6 +591,7 @@ def main() -> None:
             file_list=job.file_list,
             time_start=args.time_start,
             time_end=args.time_end,
+            filename_time_format=args.filename_time_format,
             forward_args=forward_args,
         )
         print(

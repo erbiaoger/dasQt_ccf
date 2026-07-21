@@ -41,6 +41,8 @@
 #   --date-start YYYY-MM-DD  可选。日期过滤下限。
 #   --time-start HH:MM     可选。时间过滤下限，需与 --time-end 同时使用。
 #   --time-end HH:MM       可选。时间过滤上限，需与 --time-start 同时使用。
+#   --filename-time-format FMT
+#                          可选。文件名时间格式，例如：%Y%m%d_%H%M%S。
 #   --recursive            递归扫描所有子文件夹。
 #   --include-root         也处理 root-data-dir 本身（如果它直接包含数据文件）。
 #   --file-list-name NAME  可选。每个子文件夹使用的清单文件名。
@@ -77,6 +79,9 @@ Options:
   --date-start DATE       Optional YYYY-MM-DD filter.
   --time-start HH:MM      Optional time filter lower bound.
   --time-end HH:MM        Optional time filter upper bound.
+  --filename-time-format FMT
+                         Optional Python datetime.strptime filename timestamp format.
+                         Example: %%Y%%m%%d_%%H%%M%%S
   --recursive             Enable recursive folder scan.
   --include-root          Include root-data-dir itself.
   --file-list-name NAME   Optional per-folder manifest filename.
@@ -100,6 +105,9 @@ PROFILE_STAGES="0"  # 阶段日志开关：0 关闭，1 开启
 DATE_START=""
 TIME_START=""
 TIME_END=""
+# 文件名中的时间戳格式。示例文件 ..._20260603_235022.778.h5 使用：
+# %Y%m%d_%H%M%S（不含毫秒也可以）。启用时间过滤时请确认此处格式正确。
+FILENAME_TIME_FORMAT="%Y%m%d_%H%M%S"
 RECURSIVE="0"
 INCLUDE_ROOT="0"
 FILE_LIST_NAME=""
@@ -123,6 +131,7 @@ while [[ $# -gt 0 ]]; do
     --date-start) DATE_START="$2"; shift 2 ;;
     --time-start) TIME_START="$2"; shift 2 ;;
     --time-end) TIME_END="$2"; shift 2 ;;
+    --filename-time-format) FILENAME_TIME_FORMAT="$2"; shift 2 ;;
     --recursive) RECURSIVE="1"; shift ;;
     --include-root) INCLUDE_ROOT="1"; shift ;;
     --file-list-name) FILE_LIST_NAME="$2"; shift 2 ;;
@@ -177,6 +186,13 @@ if [[ -n "${TIME_START}" ]]; then
 fi
 if [[ -n "${TIME_END}" ]]; then
   CMD+=(--time-end "${TIME_END}")
+fi
+if [[ -n "${TIME_START}" || -n "${TIME_END}" ]]; then
+  if [[ -z "${FILENAME_TIME_FORMAT}" ]]; then
+    echo "[ERROR] FILENAME_TIME_FORMAT must be set when time filtering is enabled." >&2
+    exit 1
+  fi
+  CMD+=(--filename-time-format "${FILENAME_TIME_FORMAT}")
 fi
 if [[ "${RECURSIVE}" == "1" ]]; then
   CMD+=(--recursive)
