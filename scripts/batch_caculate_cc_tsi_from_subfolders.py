@@ -36,14 +36,14 @@ Batch-run CC/TSI computation for all subfolders under one root DAS directory.
 4) 仅处理每天 08:00-18:00:
    `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
-      --config ./config_ChangBai/cc_config.jsonc \
+      --config ./config/cc_config.jsonc \
       --time-start 08:00 --time-end 18:00 \
       --filename-time-format '%Y%m%d_%H%M%S'`
 
 5) 从指定日期开始处理:
    `uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py \
       --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/ \
-      --config ./config_ChangBai/cc_config.jsonc \
+      --config ./config/cc_config.jsonc \
       --date-start 2025-03-23`
 
 扫描优化:
@@ -374,7 +374,7 @@ def main() -> None:
     parser.add_argument(
         "--config",
         type=Path,
-        default=PROJECT_DIR / "config/config_ChangBai/cc_config.jsonc",
+        default=PROJECT_DIR / "config/cc_config.jsonc",
         help="单目录计算脚本使用的配置文件。",
     )
     parser.add_argument(

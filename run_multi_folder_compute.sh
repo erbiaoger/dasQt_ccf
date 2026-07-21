@@ -11,7 +11,7 @@
 #
 # Example:
 #   ./run_multi_folder_compute.sh \
-#     --config ./config/config_ChangBai/cc_config.jsonc \
+#     --config ./config/cc_config.jsonc \
 #     --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
 #     --output-root ./outputs/cc_tsi_outputs_by_folder \
 #     --save-every 30 \
@@ -25,7 +25,7 @@
 #     -- --cc-enhance tsi --refresh-file-index
 #
 # 参数：
-#   --config PATH          批处理配置文件。默认：./config/config_ChangBai/cc_config.jsonc
+#   --config PATH          批处理配置文件。默认：./config/cc_config.jsonc
 #   --root-data-dir PATH   必填。包含多个子文件夹的 DAS 根目录。
 #   --output-root PATH     输出根目录。默认：./outputs/cc_tsi_outputs_by_folder
 #   --save-every N         传给单文件计算的保存步长。默认：30
@@ -60,7 +60,7 @@ Usage:
   $(basename "$0") --root-data-dir PATH [options] [-- EXTRA_PY_ARGS...]
 
 Options:
-  --config PATH           Default: ${SCRIPT_DIR}/config/config_ChangBai/cc_config.jsonc
+  --config PATH           Default: ${SCRIPT_DIR}/config/cc_config.jsonc
   --root-data-dir PATH    Required. Root DAS folder.
   --output-root PATH      Default: ${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder
   --save-every N          Default: 30

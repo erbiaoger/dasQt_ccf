@@ -13,14 +13,14 @@
 #   ./run_multi_folder_dispersion.sh \
 #     --input-root ./outputs/cc_tsi_plot_outputs_by_folder \
 #     --output-root ./outputs/dispersion_outputs_by_folder \
-#     --config ./config/config_ChangBai/disp_config.jsonc \
+#     --config ./config/disp_config.jsonc \
 #     --workers 8 \
 #     -- --save-npz --overwrite
 #
 # 参数：
 #   --input-root PATH    必填。递归扫描 `.mat` 文件的根目录。
 #   --output-root PATH   颜色谱图/立方体输出根目录。
-#   --config PATH        颜色谱图配置 JSONC。默认：./config/config_ChangBai/disp_config.jsonc
+#   --config PATH        颜色谱图配置 JSONC。默认：./config/disp_config.jsonc
 #   --glob PATTERN       MAT 文件名模式。默认：restack_*.mat
 #   --method NAME        可选的方法覆盖参数。
 #   --shot-start N       可选。包含的起始 shot 编号。
@@ -42,7 +42,7 @@ Usage:
 Options:
   --input-root PATH     Required. Root directory scanned recursively.
   --output-root PATH    Default: ${SCRIPT_DIR}/outputs/dispersion_outputs_by_folder
-  --config PATH         Default: ${SCRIPT_DIR}/config/config_ChangBai/disp_config.jsonc
+  --config PATH         Default: ${SCRIPT_DIR}/config/disp_config.jsonc
   --glob PATTERN        Default: restack_*.mat
   --method NAME         Optional dispersion method override.
   --shot-start N        Optional inclusive shot start.

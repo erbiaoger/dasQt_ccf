@@ -1,32 +1,33 @@
 # scripts
 
-本目录存放 `03_ccf` 的 Python CLI 实现。根目录只保留 shell 入口脚本；如果你想直接调 Python，这里才是实际入口。
+本目录存放 `03_ccf` 的 Python CLI 实现。代码调用当前仓库的 `dasQt.features.dispersion.backend.components` 功能模块。
 
 ## 文件说明
 
-- [caculate_cc_tsi_from_folder.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py): 对单个 DAS 文件夹做 CC / TSI 计算
-- [batch_caculate_cc_tsi_from_subfolders.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py): 扫描根目录下多个子目录并批量调用单文件夹计算
-- [stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/stack_saved_cc_mat.py): 对一个输出目录中的 `cc_stack*.mat` 做二次叠加与绘图
-- [batch_stack_saved_cc_mat.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/batch_stack_saved_cc_mat.py): 对多个结果目录批量二次叠加
-- [backfill_shot_position_meta.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/backfill_shot_position_meta.py): 给旧结果补齐 shot 位置元数据
-- [plot_cc_m3_shots.py](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/plot_cc_m3_shots.py): 绘制每个 shot 的 CC 与 m3 联合图
+- `caculate_cc_tsi_from_folder.py`：单个 DAS 文件夹的 CC / TSI 计算入口，实际实现位于 `dasQt.features.dispersion.backend.components.ccf.folder_pipeline`。
+- `batch_caculate_cc_tsi_from_subfolders.py`：扫描多个子文件夹并调用单文件夹计算。
+- `stack_saved_cc_mat.py`：读取一个目录中的 CC MAT 文件，二次叠加并输出图像。
+- `batch_stack_saved_cc_mat.py`：对多个结果目录批量二次叠加。
+- `backfill_shot_position_meta.py`：为旧 MAT 结果补齐 shot 空间元数据。
+- `plot_cc_m3_shots.py`：绘制 shot 级 CC 与 m3 联图。
 
-## 运行约定
+## 运行方式
 
-- 推荐从根目录使用 shell 脚本运行
-- 如果直接运行 Python，请仍然使用项目 `.venv` 和 `uv`
-- 示例：
+推荐使用上级目录的 shell 包装脚本。直接调用 Python 时，从仓库根目录使用项目 `.venv` 和 `uv`：
 
 ```bash
-source /Users/zhangzhiyu/MyProjects/dasQt/.venv/bin/activate
-uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py --help
+cd /Users/zhangzhiyu/MyProjects/dasQt
+uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py --help
+uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py --help
+uv run python examples/03_ccf/scripts/stack_saved_cc_mat.py --help
+uv run python examples/03_ccf/scripts/batch_stack_saved_cc_mat.py --help
 ```
 
-## 对应关系
+脚本开头的文档字符串包含用途、输入输出和典型用例；运行过程会将进度和结果写入终端。
 
-- `../run_single_folder_compute.sh` -> `caculate_cc_tsi_from_folder.py`
-- `../run_multi_folder_compute.sh` -> `batch_caculate_cc_tsi_from_subfolders.py`
-- `../run_single_folder_stack.sh` -> `stack_saved_cc_mat.py`
-- `../run_multi_folder_stack.sh` -> `batch_stack_saved_cc_mat.py`
+对应 shell 入口：
 
-频散提取和 GIF 生成功能在上级目录的 [tools](/Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/tools) 中。
+- `../run_single_folder_compute.sh` → `caculate_cc_tsi_from_folder.py`
+- `../run_multi_folder_compute.sh` → `batch_caculate_cc_tsi_from_subfolders.py`
+- `../run_single_folder_stack.sh` → `stack_saved_cc_mat.py`
+- `../run_multi_folder_stack.sh` → `batch_stack_saved_cc_mat.py`

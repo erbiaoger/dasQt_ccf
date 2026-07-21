@@ -6,7 +6,7 @@
 
 ```bash
 ./run_single_folder_compute.sh \
-  --config ./config/config_ChangBai/cc_config.jsonc \
+  --config ./config/cc_config.jsonc \
   --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
   --output-dir ./outputs/cc_tsi_outputs_ChangBai \
   --save-every 30 \
@@ -22,7 +22,7 @@
 
 ```bash
 ./run_multi_folder_compute.sh \
-  --config ./config/config_ChangBai/cc_config.jsonc \
+  --config ./config/cc_config.jsonc \
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
   --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
@@ -35,7 +35,7 @@
 
 批处理脚本会把该开关透传到底层单文件夹计算脚本，避免窗口错位。
 
-推荐 GPU 相关配置放在 `config/config_ChangBai/cc_config.jsonc` 内维护。
+推荐 GPU 相关配置放在 `config/cc_config.jsonc` 内维护。
 
 ## 3. 多文件夹叠加
 
@@ -59,7 +59,7 @@
 ./run_multi_folder_dispersion.sh \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/disp_config.jsonc \
+  --config ./config/disp_config.jsonc \
   --workers 32
 ```
 

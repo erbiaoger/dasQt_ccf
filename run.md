@@ -6,7 +6,7 @@
 
 ```bash
 ./run_single_folder_compute.sh \
-  --config ./config/config_ChangBai/cc_config.jsonc \
+  --config ./config/cc_config.jsonc \
   --data-folder /mnt/nas_1/DAS/ChangBai/ChangBai_20250317/2025-03-25 \
   --output-dir ./outputs/cc_tsi_outputs_single \
   --save-every 30 \
@@ -22,7 +22,7 @@
 
 ```bash
 ./run_multi_folder_compute.sh \
-  --config ./config/config_ChangBai/cc_config.jsonc \
+  --config ./config/cc_config.jsonc \
   --root-data-dir /mnt/nas_1/DAS/ChangBai/ChangBai_20250317 \
   --output-root ./outputs/cc_tsi_outputs_by_folder \
   --save-every 30 \
@@ -71,7 +71,7 @@
 ./run_single_folder_dispersion.sh \
   --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
   --output-root ./outputs/dispersion_outputs_single \
-  --config ./config/config_ChangBai/disp_config.jsonc
+  --config ./config/disp_config.jsonc
 ```
 
 ## 多文件夹提频散
@@ -80,7 +80,7 @@
 ./run_multi_folder_dispersion.sh \
   --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
   --output-root ./outputs/dispersion_outputs_ChangBai \
-  --config ./config/config_ChangBai/disp_config.jsonc \
+  --config ./config/disp_config.jsonc \
   --workers 32
 ```
 

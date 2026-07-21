@@ -69,7 +69,7 @@ plt.rcParams["font.sans-serif"] = ["Times New Roman"]
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
-from dasQt.core.dispersion_components.ccf import stack_cc_chunks
+from dasQt.features.dispersion.backend.components.ccf import stack_cc_chunks
 
 
 def parse_optional_int(value: str | None, *, name: str = "value") -> int | None:

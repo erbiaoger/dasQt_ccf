@@ -11,7 +11,7 @@
 #
 # Example:
 #   ./run_single_folder_compute.sh \
-#     --config ./config/config_ChangBai/cc_config.jsonc \
+#     --config ./config/cc_config.jsonc \
 #     --data-folder /mnt/nas/DATA/DAS/2024-10-14-ShenZhen/20241016_gau2m/2024-10-16 \
 #     --output-dir ./outputs/cc_tsi_outputs_single \
 #     --save-every 30 \
@@ -24,7 +24,7 @@
 #     -- --cc-enhance tsi --tsi-mode single_shot_local_cc --tsi-progress
 #
 # 参数：
-#   --config PATH       CC/TSI JSONC 配置文件。默认：./config/config_ChangBai/cc_config.jsonc
+#   --config PATH       CC/TSI JSONC 配置文件。默认：./config/cc_config.jsonc
 #   --data-folder PATH  必填。包含 DAS 数据文件的目录。
 #   --output-dir PATH   群组 MAT/JSON 输出目录。
 #   --save-every N      每累计 N 个有效文件保存一次结果。默认：30
@@ -51,7 +51,7 @@ Usage:
   $(basename "$0") --data-folder PATH [options] [-- EXTRA_PY_ARGS...]
 
 Options:
-  --config PATH       Default: ${SCRIPT_DIR}/config/config_ChangBai/cc_config.jsonc
+  --config PATH       Default: ${SCRIPT_DIR}/config/cc_config.jsonc
   --data-folder PATH  Required. DAS input folder.
   --output-dir PATH   Default: ${SCRIPT_DIR}/outputs/cc_tsi_outputs_single
   --save-every N      Default: 30

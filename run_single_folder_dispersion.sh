@@ -13,7 +13,7 @@
 #   ./run_single_folder_dispersion.sh \
 #     --input-dir ./outputs/cc_tsi_plot_outputs_by_folder/2025-03-27 \
 #     --output-root ./outputs/dispersion_single \
-#     --config ./config/config_ChangBai/disp_config.jsonc \
+#     --config ./config/disp_config.jsonc \
 #     --shot-start 0 \
 #     --shot-stop 200 \
 #     -- --save-npz --overwrite
@@ -21,7 +21,7 @@
 # 参数：
 #   --input-dir PATH     必填。包含 `.mat` 文件的目录。
 #   --output-root PATH   颜色谱图 PNG/NPZ 输出根目录。
-#   --config PATH        颜色谱图配置 JSONC。默认：./config/config_ChangBai/disp_config.jsonc
+#   --config PATH        颜色谱图配置 JSONC。默认：./config/disp_config.jsonc
 #   --glob PATTERN       MAT 文件名模式。默认：restack_*.mat
 #   --method NAME        传给 Python CLI 的可选方法覆盖参数。
 #   --shot-start N       可选。包含的起始 shot 编号。
@@ -43,7 +43,7 @@ Usage:
 Options:
   --input-dir PATH      Required. Directory containing MAT files.
   --output-root PATH    Default: ${SCRIPT_DIR}/outputs/dispersion_single
-  --config PATH         Default: ${SCRIPT_DIR}/config/config_ChangBai/disp_config.jsonc
+  --config PATH         Default: ${SCRIPT_DIR}/config/disp_config.jsonc
   --glob PATTERN        Default: restack_*.mat
   --method NAME         Optional dispersion method override.
   --shot-start N        Optional inclusive shot start.

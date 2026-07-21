@@ -18,14 +18,14 @@
    `uv run python tools/extract_dispersion_from_cc_mat.py \
       --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --output-root ./outputs/dispersion_outputs_ChangBai \
-      --config ./config/config_ChangBai/disp_config.jsonc \
+      --config ./config/disp_config.jsonc \
       --workers 8`
 
 2) 只处理前 20 炮，并额外保存频散数据立方:
    `uv run python tools/extract_dispersion_from_cc_mat.py \
       --input-root ./outputs/cc_tsi_plot_outputs_ChangBai \
       --output-root ./outputs/dispersion_outputs_ChangBai \
-      --config ./config/config_ChangBai/disp_config.jsonc \
+      --config ./config/disp_config.jsonc \
       --shot-stop 20 \
       --save-npz`
 
@@ -38,7 +38,7 @@
    `uv run python tools/extract_dispersion_from_cc_mat.py \
       --input-dir ./outputs/cc_tsi_plot_outputs_ChangBai/2025-03-27 \
       --output-root ./outputs/dispersion_outputs_ChangBai_single \
-      --config ./config/config_ChangBai/disp_config.jsonc`
+      --config ./config/disp_config.jsonc`
 
 输入:
 - 一个目录树，或单个目录；每个有效目录至少有一个匹配 `--glob` 的 `.mat` 文件。
@@ -85,7 +85,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
-from dasQt.core.dispersion_components.utils.dispersion_utils import (
+from dasQt.features.dispersion.backend.components.utils.dispersion_utils import (
     compute_dispersion_image,
 )
 from dasQt.utils.config import load_jsonc_file
@@ -140,8 +140,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "config/config_ChangBai/disp_config.jsonc",
-        help="频散参数配置文件；默认使用 config/config_ChangBai/disp_config.jsonc，也兼容 legacy dispersion.jsonc。",
+        default=Path(__file__).resolve().parents[1] / "config/disp_config.jsonc",
+        help="频散参数配置文件；默认使用 config/disp_config.jsonc，也兼容 legacy dispersion.jsonc。",
     )
     parser.add_argument(
         "--glob",

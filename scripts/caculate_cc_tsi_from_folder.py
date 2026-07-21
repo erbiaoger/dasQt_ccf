@@ -16,20 +16,20 @@ Purpose:
 Implementation:
     This file is intentionally a stable CLI entrypoint. The reusable
     implementation lives in:
-        dasQt.core.dispersion_components.ccf.folder_pipeline
+        dasQt.features.dispersion.backend.components.ccf.folder_pipeline
 
 Typical run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
-        --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc
+    uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
+        --config examples/03_ccf/config/cc_config.jsonc
 
 Time-window run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
-        --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc \
+    uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
+        --config examples/03_ccf/config/cc_config.jsonc \
         --time-start 08:00 --time-end 18:00
 
 GPU/local-shot TSI run:
-    uv run python /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
-        --config /Users/zhangzhiyu/MyProjects/dasQt-example/03_ccf/config/cc_config.jsonc \
+    uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
+        --config examples/03_ccf/config/cc_config.jsonc \
         --cc-enhance tsi \
         --tsi-mode single_shot_local_cc \
         --cc-backend torch \
@@ -122,7 +122,9 @@ Output:
 
 from __future__ import annotations
 
-from dasQt.core.dispersion_components.ccf.folder_pipeline import run_cc_tsi_folder_pipeline
+from dasQt.features.dispersion.backend.components.ccf.folder_pipeline import (
+    run_cc_tsi_folder_pipeline,
+)
 
 
 def main() -> None:
