@@ -7,7 +7,7 @@
     // Frequency normalization. Options: no, rma, phase_only.
     "freq_norm": "rma",
     // Time normalization. Options: no, rma, one_bit.
-    "time_norm": "one_bit",
+    "time_norm": "no",
     // Correlation method. Options: coherency, xcorr, deconv.
     "cc_method": "coherency",
     // Stacking method. Options: linear, pws, robust.
@@ -17,11 +17,11 @@
     // CC numerical backend. Options: auto, cpu, torch.
     "cc_backend": "torch",
     // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
-    "cc_device": "all_mps",
+    "cc_device": "all_cuda",
     // How many CC chunks to process together in one backend batch.
-    "cc_batch_chunks": 2,
+    "cc_batch_chunks": 16,
     // How many local shots to correlate together per CC backend batch in single_shot_local_cc mode.
-    "cc_shot_batch_size": 1,
+    "cc_shot_batch_size": 4,
     // CC compute dtype. Options: float32, float64.
     "cc_dtype": "float32",
     // Time-domain smoothing length.
@@ -29,11 +29,11 @@
     // Spectral smoothing length.
     "smoothspect_N": 5,
     // Maximum lag in seconds kept in the output gather.
-    "maxlag": 2.0,
+    "maxlag": 2.5,
     // Channel-quality threshold; channels with std above this value are rejected.
     "max_over_std": 1000000000,
     // Window length in seconds per CC chunk.
-    "cc_len": 5.0,
+    "cc_len": 10.0,
     // Segment minimum distance in meters.
     "xmin": 200.0,
     // Segment maximum distance in meters.
@@ -67,21 +67,21 @@
     // CC region selector. Common values in current GUI: All, Up, Down.
     "cc_region": "All",
     // Spatial downsampling factor applied before CC computation. 1 keeps the original spacing.
-    "space_downsample": 2,
+    "space_downsample": 1,
     // Temporal downsampling factor applied before CC computation. 1 keeps the original sample interval.
-    "time_downsample": 2,
+    "time_downsample": 1,
     // Display downsample step along distance/channel axis.
     "ddx": 1,
     // Display downsample step along lag/time axis.
     "ddt": 1,
     // Maximum TSI iterations.
-    "tsi_iterations": 1,
+    "tsi_iterations": 2,
     // Relative L1 convergence threshold for TSI early stopping.
     "tsi_stop_rel_l1": 0.005,
     // TSI execution mode. Options: single_shot, single_shot_local_cc, strict_sparse_all_shot.
     "tsi_mode": "single_shot_local_cc",
     // Batch size used to process multiple single_shot windows in one TSI call.
-    "tsi_shot_batch_size": 8,
+    "tsi_shot_batch_size": 32,
     // Show single_shot TSI batch progress bars in terminal workflows.
     "tsi_show_progress": true,
     // Apply the soft velocity taper used by the current TSI workflow if true.
