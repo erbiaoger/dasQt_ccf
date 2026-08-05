@@ -1,10 +1,10 @@
 # scripts
 
-本目录存放 `03_ccf` 的 Python CLI 实现。代码调用当前仓库的 `dasQt.features.dispersion.backend.components` 功能模块。
+本目录存放 `03_ccf` 的 Python CLI 实现。代码调用当前仓库的 `dasqt.features.dispersion.backend.components` 功能模块。
 
 ## 文件说明
 
-- `caculate_cc_tsi_from_folder.py`：单个 DAS 文件夹的 CC / TSI 计算入口，实际实现位于 `dasQt.features.dispersion.backend.components.ccf.folder_pipeline`。
+- `caculate_cc_tsi_from_folder.py`：单个 DAS 文件夹的 CC / TSI 计算入口，实际实现位于 `dasqt.features.dispersion.backend.components.ccf.folder_pipeline`。
 - `batch_caculate_cc_tsi_from_subfolders.py`：扫描多个子文件夹并调用单文件夹计算。
 - `stack_saved_cc_mat.py`：读取一个目录中的 CC MAT 文件，二次叠加并输出图像。
 - `batch_stack_saved_cc_mat.py`：对多个结果目录批量二次叠加。

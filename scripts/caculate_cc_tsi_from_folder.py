@@ -16,7 +16,7 @@ Purpose:
 Implementation:
     This file is intentionally a stable CLI entrypoint. The reusable
     implementation lives in:
-        dasQt.features.dispersion.backend.components.ccf.folder_pipeline
+        dasqt.features.dispersion.backend.components.ccf.folder_pipeline
 
 Typical run:
     uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py \
@@ -122,7 +122,7 @@ Output:
 
 from __future__ import annotations
 
-from dasQt.features.dispersion.backend.components.ccf.folder_pipeline import (
+from dasqt.features.dispersion.backend.components.ccf.folder_pipeline import (
     run_cc_tsi_folder_pipeline,
 )
 

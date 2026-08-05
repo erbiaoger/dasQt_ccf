@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
-from dasQt.utils.imshow import my_cmap, setAxis
+from dasqt.utils.imshow import my_cmap, setAxis
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 

@@ -10,12 +10,12 @@
 示例脚本使用当前仓库中的功能 API：
 
 ```python
-from dasQt.features.dispersion.backend.components.ccf import (
+from dasqt.features.dispersion.backend.components.ccf import (
     run_cc_tsi_folder_pipeline,
     run_batch_ccf,
     run_batch_restack,
 )
-from dasQt.features.dispersion.backend.components.utils.dispersion_utils import (
+from dasqt.features.dispersion.backend.components.utils.dispersion_utils import (
     compute_dispersion_image,
 )
 ```

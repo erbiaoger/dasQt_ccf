@@ -85,10 +85,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
-from dasQt.features.dispersion.backend.components.utils.dispersion_utils import (
+from dasqt.features.dispersion.backend.components.utils.dispersion_utils import (
     compute_dispersion_image,
 )
-from dasQt.utils.config import load_jsonc_file
+from dasqt.utils.config import load_jsonc_file
 
 
 plt.rcParams.update(

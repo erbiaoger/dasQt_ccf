@@ -5,7 +5,7 @@
 ## 文件说明
 
 - `build_cc_h5_cube.py`：把多个日期或批次的 CC MAT 结果汇总为 HDF5 立方体，并输出索引 CSV。
-- `extract_dispersion_from_cc_mat.py`：逐炮调用当前 `dasQt.features.dispersion.backend.components.utils.dispersion_utils.compute_dispersion_image()`，保存 CC+频散双图和可选 NPZ 立方体。
+- `extract_dispersion_from_cc_mat.py`：逐炮调用当前 `dasqt.features.dispersion.backend.components.utils.dispersion_utils.compute_dispersion_image()`，保存 CC+频散双图和可选 NPZ 立方体。
 - `create_shot_dispersion_gif.py`：按目录内全部图片或固定 shot 编号合成 GIF。
 
 ## 运行方式
