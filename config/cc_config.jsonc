@@ -19,7 +19,7 @@
     // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
     "cc_device": "all_cuda",
     // How many CC chunks to process together in one backend batch.
-    "cc_batch_chunks": 16,
+    "cc_batch_chunks": 4,
     // How many local shots to correlate together per CC backend batch in single_shot_local_cc mode.
     "cc_shot_batch_size": 4,
     // CC compute dtype. Options: float32, float64.

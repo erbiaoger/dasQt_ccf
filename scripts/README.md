@@ -10,6 +10,7 @@
 - `batch_stack_saved_cc_mat.py`：对多个结果目录批量二次叠加。
 - `backfill_shot_position_meta.py`：为旧 MAT 结果补齐 shot 空间元数据。
 - `plot_cc_m3_shots.py`：绘制 shot 级 CC 与 m3 联图。
+- `convert_cc_mat_to_timeslice_h5.py`：将每个 MAT 转换为一个 HDF5 CCF 时间片并生成 `manifest.json`，供长时 CCF GUI 使用。
 
 ## 运行方式
 
@@ -21,6 +22,7 @@ uv run python examples/03_ccf/scripts/caculate_cc_tsi_from_folder.py --help
 uv run python examples/03_ccf/scripts/batch_caculate_cc_tsi_from_subfolders.py --help
 uv run python examples/03_ccf/scripts/stack_saved_cc_mat.py --help
 uv run python examples/03_ccf/scripts/batch_stack_saved_cc_mat.py --help
+uv run python examples/03_ccf/scripts/convert_cc_mat_to_timeslice_h5.py --help
 ```
 
 脚本开头的文档字符串包含用途、输入输出和典型用例；运行过程会将进度和结果写入终端。
