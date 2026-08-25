@@ -30,13 +30,41 @@ output-h5 是合并后的单个 HDF5 文件；manifest 保存每个时间片的�
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 from pathlib import Path
+
+
+def add_dasqt_root(path: Path | None) -> Path | None:
+    """Add the source checkout containing ``dasqt/`` to ``sys.path``."""
+
+    candidates: list[Path] = []
+    if path is not None:
+        candidates.append(path.expanduser().resolve())
+    env_root = os.environ.get("DASQT_ROOT")
+    if env_root:
+        candidates.append(Path(env_root).expanduser().resolve())
+    script_path = Path(__file__).resolve()
+    candidates.extend(
+        [
+            Path.cwd().resolve(),
+            script_path.parents[3] if len(script_path.parents) > 3 else script_path.parent,
+            Path("/csim2/zhangzhiyu/MyProjects/dasQt"),
+            Path("/Users/zhangzhiyu/MyProjects/dasQt"),
+        ]
+    )
+    for candidate in candidates:
+        if (candidate / "dasqt").is_dir():
+            sys.path.insert(0, str(candidate))
+            return candidate
+    return None
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input-root", type=Path, required=True, help="MAT 根目录")
     parser.add_argument("--output-root", type=Path, required=True, help="HDF5 输出根目录")
+    parser.add_argument("--dasqt-root", type=Path, default=None, help="dasQt 源码根目录；也可用 DASQT_ROOT 环境变量")
     parser.add_argument("--output-h5", type=Path, default=None, help="合并 HDF5 路径，默认 <output-root>/ccf_timeslices.h5")
     parser.add_argument("--manifest", type=Path, default=None, help="清单路径，默认 <output-root>/manifest.json")
     parser.add_argument("--glob", default="restack_*.mat", help="递归匹配模式，默认 restack_*.mat")
@@ -55,11 +83,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    args = build_parser().parse_args()
+    project_root = add_dasqt_root(args.dasqt_root)
+    if project_root is None:
+        raise ModuleNotFoundError(
+            "找不到 dasqt 包。请设置 DASQT_ROOT，或传入 --dasqt-root /path/to/dasQt"
+        )
     from dasqt.features.dispersion.backend.components.time_lapse_ccf import (
         convert_mat_tree,
     )
 
-    args = build_parser().parse_args()
     result = convert_mat_tree(
         args.input_root,
         args.output_root,
