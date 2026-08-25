@@ -18,6 +18,8 @@ source "${SCRIPT_DIR}/_shell_common.sh"
 INPUT_ROOT="/path/to/mat_root"
 # HDF5 时间片和 manifest.json 输出目录。
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/ccf_timeslices"
+# 合并后的单个 HDF5 文件路径。
+OUTPUT_H5="${OUTPUT_ROOT}/ccf_all_times.h5"
 # 可选：自定义 manifest 路径；留空则写入 OUTPUT_ROOT/manifest.json。
 MANIFEST_PATH=""
 # MAT 文件匹配模式；每个匹配文件都会作为一个独立时间片。
@@ -40,6 +42,7 @@ CMD=(
   "examples/03_ccf/scripts/convert_cc_mat_to_timeslice_h5.py"
   --input-root "${INPUT_ROOT}"
   --output-root "${OUTPUT_ROOT}"
+  --output-h5 "${OUTPUT_H5}"
   --glob "${MAT_GLOB}"
   --compression "${COMPRESSION}"
   --gzip-level "${GZIP_LEVEL}"

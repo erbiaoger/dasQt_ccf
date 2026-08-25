@@ -39,8 +39,8 @@ cd /Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf
 ./run_convert_cc_mat_to_timeslice_h5.sh
 ```
 
-该脚本调用 `scripts/convert_cc_mat_to_timeslice_h5.py`，每个匹配的 MAT 文件生成
-一个 HDF5 时间片和统一的 `manifest.json`。设置 `DRY_RUN="1"` 可先检查扫描结果，
+该脚本调用 `scripts/convert_cc_mat_to_timeslice_h5.py`，把所有匹配的 MAT 文件合并
+到一个 HDF5 文件，并生成统一的 `manifest.json`。设置 `DRY_RUN="1"` 可先检查扫描结果，
 设置 `OVERWRITE="1"` 才会覆盖已存在的 HDF5 文件。
 
 ## 推荐工作流
