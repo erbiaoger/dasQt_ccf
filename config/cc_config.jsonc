@@ -16,10 +16,10 @@
     "cc_enhance_method": "tsi",
     // CC numerical backend. Options: auto, cpu, torch.
     "cc_backend": "torch",
-    // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
-    "cc_device": "all_cuda",
+    // Preferred CC execution device. Options: auto, cpu, mps, cuda.
+    "cc_device": "cuda",
     // How many CC chunks to process together in one backend batch.
-    "cc_batch_chunks": 4,
+    "cc_batch_chunks": 8,
     // How many local shots to correlate together per CC backend batch in single_shot_local_cc mode.
     "cc_shot_batch_size": 4,
     // CC compute dtype. Options: float32, float64.
@@ -77,7 +77,7 @@
     // Maximum TSI iterations.
     // 每 N 个文件执行 TSI，0 兼容旧行为；独立于 save-every。
     "tsi_files_per_group": 0,
-    "tsi_iterations": 2,
+    "tsi_iterations": 4,
     // Relative L1 convergence threshold for TSI early stopping.
     "tsi_stop_rel_l1": 0.005,
     // TSI execution mode. Options: single_shot, single_shot_local_cc, strict_sparse_all_shot.
