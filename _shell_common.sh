@@ -3,8 +3,8 @@
 
 set -euo pipefail
 
-CCF_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DASQT_REPO_DIR="$(cd "${CCF_SCRIPT_DIR}/../.." && pwd)"
+
+DASQT_REPO_DIR="/csim2/zhangzhiyu/MyProjects/DAS_Procee_Show"
 DASQT_VENV_ACTIVATE="${DASQT_REPO_DIR}/.venv/bin/activate"
 
 ensure_dasqt_env() {
