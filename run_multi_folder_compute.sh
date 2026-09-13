@@ -24,8 +24,15 @@
 #     --profile-stages \
 #     -- --cc-enhance tsi --refresh-file-index
 #
+# 前 5 个文件测试（目录直接包含 h5 时加 --include-root）：
+# ./run_multi_folder_compute.sh --root-data-dir /Volumes/SanDisk4T/2026-09-09 \
+#   --include-root --no-get-disp1-compatible --start-index 0 --end-index 4 \
+#   --save-every 5 --cc-backend cpp --cc-threads 4 --cc-memory-budget-mb 8192 \
+#   --profile-stages --output-root ./outputs/cpp_five
+# 数值对照时两端显式添加 --cc-prewhiten-mode off，避免旧 CPU 实谱兼容路径。
+# 对比 MPS：改为 --cc-backend torch --cc-device mps，并更换输出目录。
 # 参数：
-#   --config PATH          批处理配置文件。默认：./config/cc_config.jsonc
+#   --config PATH          默认复用 ~/.dasQt/config/cc_config.jsonc；不存在时使用示例配置。
 #   --root-data-dir PATH   必填。包含多个子文件夹的 DAS 根目录。
 #   --output-root PATH     输出根目录。默认：./outputs/cc_tsi_outputs_by_folder
 #   --save-every N         传给单文件计算的保存步长。默认：30
@@ -60,7 +67,7 @@ Usage:
   $(basename "$0") --root-data-dir PATH [options] [-- EXTRA_PY_ARGS...]
 
 Options:
-  --config PATH           Default: ${SCRIPT_DIR}/config/cc_config.jsonc
+  --config PATH           Default: ${CONFIG}
   --root-data-dir PATH    Required. Root DAS folder.
   --output-root PATH      Default: ${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder
   --save-every N          Default: 30
@@ -69,6 +76,11 @@ Options:
                          Default: on. start-index becomes the anchor file.
   --end-index N           Default: unset
   --workers N             Default: 1
+  --cc-backend NAME       auto/cpu/cpp/torch/cupy; default from config
+  --cc-device NAME        Default: auto (detect MPS/CUDA/CPU)
+  --cc-threads N          C++ threads; 0 automatic
+  --tsi-files-per-group N Files per TSI call; independent of save-every; 0 legacy
+  --cc-memory-budget-mb N C++ budget in MiB; 8192 = 8 GiB
   --cc-prewhiten-mode MODE
                          Optional: auto | full | tiled | off
   --cc-prewhiten-tile-channels N
@@ -90,7 +102,15 @@ EOF
   print_common_footer
 }
 
-CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
+# 优先复用 GUI 用户参数；不存在时使用示例配置。
+CONFIG="${HOME}/.dasQt/config/cc_config.jsonc"
+[[ -f "${CONFIG}" ]] || CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
+CC_BACKEND=""  # 留空沿用配置；auto/cpu/cpp/torch/cupy
+CC_THREADS=""  # C++ 线程数；0 自动，比较测试使用 4
+CC_MEMORY_BUDGET_MB=""  # 原生预算 MiB；8192 = 8 GiB，不等于物理内存扩容
+TSI_FILES_PER_GROUP=""  # 每 N 个有效文件叠加后做 TSI；0 沿用旧行为，独立于 SAVE_EVERY
+CC_DEVICE="auto"  # 默认自动检测 MPS/CUDA/CPU；比较时可显式指定 mps
+
 ROOT_DATA_DIR=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder"
 SAVE_EVERY="30"
@@ -124,6 +144,11 @@ while [[ $# -gt 0 ]]; do
     --no-get-disp1-compatible) GET_DISP1_COMPATIBLE="0"; shift ;;
     --end-index) END_INDEX="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
+    --cc-backend) CC_BACKEND="$2"; shift 2 ;;
+    --tsi-files-per-group) TSI_FILES_PER_GROUP="$2"; shift 2 ;;
+    --cc-threads) CC_THREADS="$2"; shift 2 ;;
+    --cc-memory-budget-mb) CC_MEMORY_BUDGET_MB="$2"; shift 2 ;;
+    --cc-device) CC_DEVICE="$2"; shift 2 ;;
     --cc-prewhiten-mode) CC_PREWHITEN_MODE="$2"; shift 2 ;;
     --cc-prewhiten-tile-channels) CC_PREWHITEN_TILE_CHANNELS="$2"; shift 2 ;;
     --cc-memory-safety-fraction) CC_MEMORY_SAFETY_FRACTION="$2"; shift 2 ;;
@@ -156,6 +181,12 @@ CMD=(
   --start-index "${START_INDEX}"
   --workers "${WORKERS}"
 )
+
+CMD+=(--cc-device "${CC_DEVICE}")
+[[ -z "${TSI_FILES_PER_GROUP}" ]] || CMD+=(--tsi-files-per-group "${TSI_FILES_PER_GROUP}")
+[[ -z "${CC_BACKEND}" ]] || CMD+=(--cc-backend "${CC_BACKEND}")
+[[ -z "${CC_THREADS}" ]] || CMD+=(--cc-threads "${CC_THREADS}")
+[[ -z "${CC_MEMORY_BUDGET_MB}" ]] || CMD+=(--cc-memory-budget-mb "${CC_MEMORY_BUDGET_MB}")
 
 if [[ "${GET_DISP1_COMPATIBLE}" == "1" ]]; then
   CMD+=(--get-disp1-compatible)

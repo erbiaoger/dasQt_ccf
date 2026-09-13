@@ -75,6 +75,8 @@
     // Display downsample step along lag/time axis.
     "ddt": 1,
     // Maximum TSI iterations.
+    // 每 N 个文件执行 TSI，0 兼容旧行为；独立于 save-every。
+    "tsi_files_per_group": 0,
     "tsi_iterations": 2,
     // Relative L1 convergence threshold for TSI early stopping.
     "tsi_stop_rel_l1": 0.005,

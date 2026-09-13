@@ -118,3 +118,41 @@ uv run python examples/03_ccf/tools/extract_dispersion_from_cc_mat.py --help
 ```
 
 绘图工具已统一设置 `Times New Roman` 字体。长时间计算可以把上述命令放入 `tmux` 窗口运行。
+
+### 真实数据：前 5 个文件与后端比较
+
+`run_multi_folder_compute.sh` 默认复用 `~/.dasQt/config/cc_config.jsonc`，没有用户配置时回退示例配置。
+设备默认自动检测；`--cc-backend cpp --cc-threads 4` 启用 C++ 四线程，
+`--cc-backend torch --cc-device mps` 指定 Apple GPU。原生预算使用 MiB：8192 = 8 GiB。
+通过 `--no-get-disp1-compatible --start-index 0 --end-index 4` 精确选择前 5 个文件；
+`--save-every 5` 合为一组。直接存放 HDF5 的目录需要 `--include-root`。
+比较时请复制配置为固定快照，避免 GUI 保存参数期间改变两次计算的工作量。
+
+```bash
+bash examples/03_ccf/run_multi_folder_compute.sh \
+  --config docs/benchmarks/real_five_20260909/config.json \
+  --root-data-dir /Volumes/SanDisk4T/2026-09-09 --include-root \
+  --no-get-disp1-compatible --start-index 0 --end-index 4 --save-every 5 \
+  --workers 1 --cc-backend cpp --cc-threads 4 --cc-memory-budget-mb 8192 \
+  --profile-stages --output-root examples/03_ccf/outputs/cpp_five \
+  -- --cc-prefetch-batches 1 --no-tsi-progress
+```
+
+对照 MPS 时替换后端为 `--cc-backend torch --cc-device mps` 并改输出目录。
+脚本通过项目 `.venv` 的 `uv run --no-sync` 执行，避免无意同步替换正在测试的原生扩展。
+
+与 MPS 做数值对照时，请显式添加 `--cc-prewhiten-mode off`。默认 full 模式在原 CPU/C++ 兼容路径中丢弃谱虚部，MPS 保留复谱，两者结果定义不完全一致。实测及误差见 `docs/benchmarks/real_five_20260909/README.md`。
+
+### TSI 文件分组与保存频率独立
+
+配置 `tsi_files_per_group`（或 CLI `--tsi-files-per-group`）控制每组多少个有效文件先叠加再增强。
+默认 0 沿用旧行为。例：选取 60 文件，`--tsi-files-per-group 10 --save-every 60`，
+执行 6 次 TSI，最后使用 stacking_method 叠加这 6 组增强炮集，保存一份结果，不再执行一次 TSI。
+GUI 在 Advanced Settings → TSI → Files per TSI 设置；总文件数仍由原来的文件数量设置控制。
+
+保存参数是独立的文件数量阈值；仅在完整 TSI 组完成后保存，不切断 TSI 组。
+例如每 10 文件 TSI、每 15 文件保存，实际首份包含 20 文件。
+新分组模式在输入结束时处理不足 N 的尾组，并保存不足保存阈值的最后结果。
+各 TSI 组等权参与最终叠加，短尾组也占一组权重；诊断和 MAT 记录真实文件数及各组大小。
+TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加后增强。
+该参数不适用于 single_shot_final_once；同时启用会明确报错。

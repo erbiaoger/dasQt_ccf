@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CCF_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DASQT_REPO_DIR="/Users/zhangzhiyu/MyProjects/dasQt"
+DASQT_REPO_DIR="$(cd "${CCF_SCRIPT_DIR}/../.." && pwd)"
 DASQT_VENV_ACTIVATE="${DASQT_REPO_DIR}/.venv/bin/activate"
 
 ensure_dasqt_env() {
@@ -25,7 +25,7 @@ run_uv_python() {
     cd "${DASQT_REPO_DIR}"
     # shellcheck disable=SC1090
     source "${DASQT_VENV_ACTIVATE}"
-    uv run python "$@"
+    uv run --no-sync python "$@"
   )
 }
 
