@@ -26,6 +26,8 @@
 #   --shot-start N       可选。包含的起始 shot 编号。
 #   --shot-stop N        可选。不包含的结束 shot 编号。
 #   --workers N          CPU 进程数。默认：8
+#   --cc-cmap NAME       CC 色图；默认 RdYlBu_r。
+#   --dispersion-cmap NAME 频散色图；默认 reference。
 #   --help               显示帮助信息。
 
 set -euo pipefail
@@ -48,6 +50,8 @@ Options:
   --shot-start N        Optional inclusive shot start.
   --shot-stop N         Optional exclusive shot stop.
   --workers N           Default: 8
+  --cc-cmap NAME        Default: RdYlBu_r
+  --dispersion-cmap NAME Default: reference
   --help                Show help.
 EOF
   print_common_footer
@@ -61,6 +65,8 @@ METHOD=""
 SHOT_START=""
 SHOT_STOP=""
 WORKERS="8"
+CC_CMAP="RdYlBu_r"
+DISPERSION_CMAP="reference"
 EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -73,6 +79,8 @@ while [[ $# -gt 0 ]]; do
     --shot-start) SHOT_START="$2"; shift 2 ;;
     --shot-stop) SHOT_STOP="$2"; shift 2 ;;
     --workers) WORKERS="$2"; shift 2 ;;
+    --cc-cmap) CC_CMAP="$2"; shift 2 ;;
+    --dispersion-cmap) DISPERSION_CMAP="$2"; shift 2 ;;
     --help|-h) usage; exit 0 ;;
     --) shift; EXTRA_ARGS=("$@"); break ;;
     *) echo "[ERROR] Unknown argument: $1" >&2; usage; exit 1 ;;
@@ -92,6 +100,8 @@ CMD=(
   --config "${CONFIG}"
   --glob "${GLOB_PATTERN}"
   --workers "${WORKERS}"
+  --cc-cmap "${CC_CMAP}"
+  --dispersion-cmap "${DISPERSION_CMAP}"
 )
 
 if [[ -n "${METHOD}" ]]; then

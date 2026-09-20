@@ -89,15 +89,15 @@ from dasqt.features.dispersion.backend.components.utils.dispersion_utils import 
     compute_dispersion_image,
 )
 from dasqt.utils.config import load_jsonc_file
-
-
-plt.rcParams.update(
-    {
-        "font.family": "Times New Roman",
-        "font.sans-serif": ["Times New Roman"],
-        "font.size": 12,
-    }
+from dasqt.utils.imshow import (
+    configure_publication_style,
+    figure_size,
+    get_colormap,
+    style_axis,
 )
+
+
+configure_publication_style()
 
 
 @dataclass(frozen=True)
@@ -193,6 +193,16 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=1,
         help="CPU 并行进程数。1 表示串行；大于 1 时按 .mat 文件并行处理多个子目录。",
+    )
+    parser.add_argument(
+        "--cc-cmap",
+        default="RdYlBu_r",
+        help="CC colormap; recommended RdYlBu_r, Spectral_r, or coolwarm.",
+    )
+    parser.add_argument(
+        "--dispersion-cmap",
+        default="reference",
+        help="reference/turbo/RdYlBu_r/Spectral_r/coolwarm/mycmap",
     )
     return parser.parse_args()
 
@@ -340,6 +350,8 @@ def plot_cc_and_dispersion(
     out_file: Path,
     mat_stem: str,
     title: str,
+    cc_cmap: str,
+    dispersion_cmap: str,
 ) -> None:
     shot_cc = np.asarray(shot_cc, dtype=float)
     img = np.asarray(img, dtype=float)
@@ -355,14 +367,16 @@ def plot_cc_and_dispersion(
     if not np.isfinite(vmax) or vmax <= 0:
         vmax = float(np.max(img)) if np.max(img) > 0 else 1.0
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.4), constrained_layout=True)
+    fig, axes = plt.subplots(
+        1, 2, figsize=figure_size("double", aspect=0.43), constrained_layout=True
+    )
 
     ax_cc = axes[0]
     im_cc = ax_cc.pcolormesh(
         centers_to_edges(x_centers),
         centers_to_edges(t_centers),
         shot_cc,
-        cmap="RdBu_r",
+        cmap=get_colormap(cc_cmap),
         shading="auto",
         vmin=-cc_vmax,
         vmax=cc_vmax,
@@ -371,6 +385,7 @@ def plot_cc_and_dispersion(
     ax_cc.set_title(f"{mat_stem} | Shot {shot_idx:04d}: CC")
     ax_cc.set_xlabel("Distance (m)")
     ax_cc.set_ylabel("Time (s)")
+    style_axis(ax_cc)
     fig.colorbar(im_cc, ax=ax_cc, fraction=0.046, pad=0.04, label="Amplitude")
 
     ax_disp = axes[1]
@@ -379,7 +394,7 @@ def plot_cc_and_dispersion(
         extent=[float(f_axis[0]), float(f_axis[-1]), float(c_axis[0]), float(c_axis[-1])],
         aspect="auto",
         origin="lower",
-        cmap="jet",
+        cmap=get_colormap(dispersion_cmap),
         interpolation="bilinear",
         vmin=0.0,
         vmax=vmax,
@@ -387,9 +402,10 @@ def plot_cc_and_dispersion(
     ax_disp.set_title(title)
     ax_disp.set_xlabel("Frequency (Hz)")
     ax_disp.set_ylabel("Phase Velocity (m/s)")
+    style_axis(ax_disp)
     fig.colorbar(im, ax=ax_disp, fraction=0.046, pad=0.04, label="Normalized energy")
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_file, dpi=180, bbox_inches="tight")
+    fig.savefig(out_file, dpi=600, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -443,6 +459,8 @@ def process_one_mat(
                 out_file=out_png,
                 mat_stem=job.mat_path.stem,
                 title=f"{job.mat_path.stem} | Shot {ishot:04d} | method={params['method']}",
+                cc_cmap=str(params.get("_cc_cmap", "RdYlBu_r")),
+                dispersion_cmap=str(params.get("_dispersion_cmap", "reference")),
             )
             if save_npz:
                 cube_list.append(np.asarray(img, dtype=np.float32))
@@ -589,6 +607,8 @@ def main() -> None:
         raise ValueError("--shot-stop must be >= 0")
 
     params = load_dispersion_scan_params(config_path, args.method)
+    params["_cc_cmap"] = args.cc_cmap
+    params["_dispersion_cmap"] = args.dispersion_cmap
     jobs = discover_jobs(
         input_root=input_root,
         input_dir=input_dir,

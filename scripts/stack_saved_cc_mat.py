@@ -64,8 +64,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat, savemat
 
-plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams["font.sans-serif"] = ["Times New Roman"]
+from dasqt.utils.imshow import (
+    configure_publication_style,
+    figure_size,
+    get_colormap,
+    style_axis,
+)
+
+configure_publication_style()
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
@@ -248,7 +254,10 @@ def plot_stacks(
     ncols = min(3, n)
     nrows = int(math.ceil(n / ncols))
     fig, axes = plt.subplots(
-        nrows, ncols, figsize=(6 * ncols, 4 * nrows), squeeze=False
+        nrows,
+        ncols,
+        figsize=figure_size("double", aspect=max(0.55, 0.55 * nrows)),
+        squeeze=False,
     )
     axes_flat = axes.flatten()
 
@@ -267,7 +276,7 @@ def plot_stacks(
             centers_to_edges(x_centers),
             centers_to_edges(t_centers),
             cc,
-            cmap="RdBu_r",
+            cmap=get_colormap("RdBu_r"),
             shading="auto",
             vmin=-vmax,
             vmax=vmax,
@@ -280,6 +289,7 @@ def plot_stacks(
         )
         ax.set_xlabel("Distance (m)")
         ax.set_ylabel("Time (s)")
+        style_axis(ax)
         fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
     for j in range(n, len(axes_flat)):
@@ -287,7 +297,7 @@ def plot_stacks(
 
     fig.tight_layout()
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_file, bbox_inches="tight")
+    fig.savefig(out_file, bbox_inches="tight", dpi=600)
     if show:
         plt.show()
     plt.close(fig)
@@ -309,12 +319,12 @@ def _plot_cc_image(
     if vmax == 0:
         vmax = 1.0
 
-    fig, ax = plt.subplots(figsize=(9, 4))
+    fig, ax = plt.subplots(figsize=figure_size("double", aspect=0.45))
     im = ax.pcolormesh(
         centers_to_edges(x_centers),
         centers_to_edges(t_centers),
         cc,
-        cmap="RdBu_r",
+        cmap=get_colormap("RdBu_r"),
         shading="auto",
         vmin=-vmax,
         vmax=vmax,
@@ -324,10 +334,11 @@ def _plot_cc_image(
     ax.set_title(title)
     ax.set_xlabel("Distance (m)")
     ax.set_ylabel("Time (s)")
+    style_axis(ax)
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     fig.tight_layout()
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_file, bbox_inches="tight")
+    fig.savefig(out_file, bbox_inches="tight", dpi=600)
     plt.close(fig)
 
 

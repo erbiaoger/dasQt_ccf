@@ -19,17 +19,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
-from dasqt.utils.imshow import my_cmap, setAxis
+from dasqt.utils.imshow import (
+    configure_publication_style,
+    figure_size,
+    get_colormap,
+    setAxis,
+)
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
-plt.rcParams.update(
-    {
-        "font.family": "Times New Roman",
-        "font.size": 14,
-    }
-)
+configure_publication_style()
 
 
 def centers_to_edges(values: np.ndarray) -> np.ndarray:
@@ -110,6 +110,8 @@ def plot_shot_panel(
     c_axis: np.ndarray,
     out_file: Path,
     title_prefix: str,
+    cc_cmap: str,
+    dispersion_cmap: str,
 ) -> None:
     nt, nx = shot_cc.shape
     x_start = float(x_origin) + shot_idx * (float(dshot) if dshot is not None else float(dx))
@@ -128,7 +130,7 @@ def plot_shot_panel(
     fig, axes = plt.subplots(
         2,
         1,
-        figsize=(7.8, 8.4),
+        figsize=figure_size("double", aspect=1.08),
         constrained_layout=True,
         gridspec_kw={"height_ratios": [1.0, 1.15]},
     )
@@ -138,7 +140,7 @@ def plot_shot_panel(
         centers_to_edges(x_centers),
         centers_to_edges(t_centers),
         shot_cc,
-        cmap="RdBu_r",
+        cmap=get_colormap(cc_cmap),
         shading="auto",
         vmin=-cc_vmax,
         vmax=cc_vmax,
@@ -157,7 +159,7 @@ def plot_shot_panel(
         extent=[float(f_axis[0]), float(f_axis[-1]), float(c_axis[0]), float(c_axis[-1])],
         aspect="auto",
         origin="lower",
-        cmap=my_cmap,
+        cmap=get_colormap(dispersion_cmap),
         vmin=0.0,
         vmax=m3_vmax,
     )
@@ -168,7 +170,7 @@ def plot_shot_panel(
     fig.colorbar(im_m3, ax=ax_m3, fraction=0.035, pad=0.02, label="Normalized energy")
 
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_file, dpi=180, bbox_inches="tight")
+    fig.savefig(out_file, dpi=600, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -181,6 +183,8 @@ def process_restack_file(
     overwrite: bool,
     shot_start: int,
     shot_stop: int | None,
+    cc_cmap: str,
+    dispersion_cmap: str,
 ) -> int:
     data, dt, dx, dshot, xmin = load_restack_mat(mat_file)
     nshot = int(data.shape[0])
@@ -212,6 +216,8 @@ def process_restack_file(
             c_axis=c_axis,
             out_file=out_file,
             title_prefix=mat_file.stem,
+            cc_cmap=cc_cmap,
+            dispersion_cmap=dispersion_cmap,
         )
         count += 1
         print(f"[OK] {out_file.name}")
@@ -259,6 +265,16 @@ def main() -> None:
     )
     parser.add_argument("--shot-start", type=int, default=0, help="Start shot index (inclusive)")
     parser.add_argument("--shot-stop", type=int, default=None, help="Stop shot index (exclusive)")
+    parser.add_argument(
+        "--cc-cmap",
+        default="RdYlBu_r",
+        help="CC colormap; recommended RdYlBu_r, Spectral_r, or coolwarm",
+    )
+    parser.add_argument(
+        "--dispersion-cmap",
+        default="mycmap",
+        help="Dispersion colormap: reference, turbo, Spectral_r, or mycmap",
+    )
     args = parser.parse_args()
 
     input_dir = args.input_dir.expanduser().resolve()
@@ -296,6 +312,8 @@ def main() -> None:
             overwrite=bool(args.overwrite),
             shot_start=int(args.shot_start),
             shot_stop=args.shot_stop,
+            cc_cmap=args.cc_cmap,
+            dispersion_cmap=args.dispersion_cmap,
         )
 
     print(f"[DONE] generated {total} figures in {output_dir}")

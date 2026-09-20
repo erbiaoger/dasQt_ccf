@@ -27,6 +27,11 @@ uv run python examples/03_ccf/scripts/convert_cc_mat_to_timeslice_h5.py --help
 
 脚本开头的文档字符串包含用途、输入输出和典型用例；运行过程会将进度和结果写入终端。
 
+所有绘图入口使用项目统一的 Times New Roman 字体、出版级刻度、180 mm
+双栏图幅和 600 dpi 输出。图像色图支持 `reference`、`turbo`、`RdYlBu_r`、
+`Spectral_r`、`coolwarm`、`mycmap`；频散 shell 入口可用 `--cc-cmap` 与
+`--dispersion-cmap` 直接切换。
+
 对应 shell 入口：
 
 - `../run_single_folder_compute.sh` → `caculate_cc_tsi_from_folder.py`
