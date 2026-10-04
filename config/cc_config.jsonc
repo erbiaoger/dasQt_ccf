@@ -21,7 +21,7 @@
     "cc_backend": "cpu",
     // C++ 工作线程数；0 自动保留一个逻辑核心。
     "cc_threads": 0,
-    // C++ 工作内存预算，单位 MiB。
+    // 兼容旧配置；C++ 已取消内存预算限制，此值不再限制分配。
     "cc_memory_budget_mb": 512000,
     // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
     "cc_device": "auto",

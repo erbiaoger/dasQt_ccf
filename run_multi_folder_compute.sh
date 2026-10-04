@@ -77,7 +77,7 @@ Options:
   --end-index N           Default: unset
   --workers N             Default: 1
   --cc-backend NAME       auto/cpu/cpp/torch/cupy; default from config
-  --cc-device NAME        Default: auto (detect MPS/CUDA/CPU)
+  --cc-device NAME        Default: from config; explicit value overrides config
   --cc-threads N          C++ threads; 0 automatic
   --tsi-files-per-group N Files per TSI call; independent of save-every; 0 legacy
   --cc-memory-budget-mb N C++ budget in MiB; 8192 = 8 GiB
@@ -102,14 +102,13 @@ EOF
   print_common_footer
 }
 
-# 优先复用 GUI 用户参数；不存在时使用示例配置。
-CONFIG="${HOME}/.dasQt/config/cc_config.jsonc"
-[[ -f "${CONFIG}" ]] || CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
+
+CONFIG="${SCRIPT_DIR}/config/cc_config.jsonc"
 CC_BACKEND=""  # 留空沿用配置；auto/cpu/cpp/torch/cupy
 CC_THREADS=""  # C++ 线程数；0 自动，比较测试使用 4
 CC_MEMORY_BUDGET_MB=""  # 原生预算 MiB；8192 = 8 GiB，不等于物理内存扩容
 TSI_FILES_PER_GROUP=""  # 每 N 个有效文件叠加后做 TSI；0 沿用旧行为，独立于 SAVE_EVERY
-CC_DEVICE="auto"  # 默认自动检测 MPS/CUDA/CPU；比较时可显式指定 mps
+CC_DEVICE=""  # 留空沿用配置中的 cc_device；显式指定 cuda/mps/cpu/auto 时覆盖配置
 
 ROOT_DATA_DIR=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder"
@@ -182,7 +181,7 @@ CMD=(
   --workers "${WORKERS}"
 )
 
-CMD+=(--cc-device "${CC_DEVICE}")
+[[ -z "${CC_DEVICE}" ]] || CMD+=(--cc-device "${CC_DEVICE}")
 [[ -z "${TSI_FILES_PER_GROUP}" ]] || CMD+=(--tsi-files-per-group "${TSI_FILES_PER_GROUP}")
 [[ -z "${CC_BACKEND}" ]] || CMD+=(--cc-backend "${CC_BACKEND}")
 [[ -z "${CC_THREADS}" ]] || CMD+=(--cc-threads "${CC_THREADS}")
