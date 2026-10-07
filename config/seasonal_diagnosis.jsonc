@@ -1,0 +1,47 @@
+// 长白山多位置季节诊断。所有位置使用测线绝对坐标（m）。
+{
+  "raw_root": "/mnt/nas-downstairs/DAS/ChangBai/ChangBai_20250317",
+  "cc_root": "./outputs/cc_tsi_outputs_by_folder",
+  "output_dir": "./outputs/seasonal_diagnosis_full_day",
+  "date_start": "2025-03-27",
+  "date_end": "2025-06-15",
+  "time_start": "00:00",
+  "time_end": "24:00",
+  "positions_m": [400, 1400, 2400, 3400, 4400, 5400, 6400, 7400, 8400, 9400],
+  // 1=分析时段内每一分钟DAT；10=每10分钟取一个DAT。
+  "raw_step_minutes": 1,
+  // 不同日期并行处理的CPU进程数；每个进程逐分钟读DAT并独立写当日缓存。
+  "raw_workers": 4,
+  // 时频图的时间间隔。60、10、1 秒均可；默认每个分钟文件一列。
+  "tf_window_s": 60,
+  // 频谱采用10秒Welch窗，50%重叠；频谱和时频矩阵保存0–50 Hz。
+  "psd_window_s": 10,
+  "spectrum_fmax_hz": 50,
+  "target_fmin_hz": 3,
+  "target_fmax_hz": 15,
+  "background_low_hz": [0.5, 3],
+  "background_high_hz": [15, 50],
+  // FK以指定位置为中心取500 m，10秒子窗，时间抗混叠抽取4倍。
+  "fk_aperture_m": 500,
+  "fk_chunk_s": 10,
+  "fk_time_decimation": 4,
+  "fk_fmax_hz": 50,
+  "fk_df_hz": 0.5,
+  "fk_vmin_mps": 200,
+  "fk_vmax_mps": 1200,
+  // 正、负时延分别用Park计算频散；每列峰/背景>=2且相邻峰速度差<=100m/s才算连续。
+  "disp_fmin_hz": 0.5,
+  "disp_fmax_hz": 50,
+  "disp_df_hz": 0.5,
+  "disp_vmin_mps": 200,
+  "disp_vmax_mps": 1200,
+  "disp_dv_mps": 10,
+  "disp_min_contrast": 2,
+  "disp_max_ridge_jump_mps": 100,
+  // 逐日逐位置诊断图数量较多；false仅生成季节汇总图和数值数据。
+  "plot_daily_details": true,
+  "plot_monthly_details": true,
+  // 固定春季与夏季代表日，用相同色标对照CC波形及两侧频散。
+  "comparison_dates": ["2025-03-27", "2025-06-10"],
+  "comparison_positions_m": [400, 4400, 8400]
+}
