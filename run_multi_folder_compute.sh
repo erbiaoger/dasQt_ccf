@@ -54,7 +54,8 @@
 #   --include-root         也处理 root-data-dir 本身（如果它直接包含数据文件）。
 #   --file-list-name NAME  可选。每个子文件夹使用的清单文件名。
 #   --receiver-side SIDE  空间接收支：right（默认）/left/both；与正负时延无关。
-#   --min-branch-traces N  频散最低非零偏移有效道数，默认 8；不影响 CC 保存。
+#   --min-branch-length-m M  最小分支孔径（米）；默认读取 config，不影响短支 CC 保存。
+#   --min-branch-traces N  旧道数门槛兼容参数；优先使用 config 中的米数门槛。
 #   --help                 显示帮助信息。
 
 set -euo pipefail
@@ -100,7 +101,8 @@ Options:
   --include-root          Include root-data-dir itself.
   --file-list-name NAME   Optional per-folder manifest filename.
   --receiver-side SIDE   Spatial receivers: right | left | both
-  --min-branch-traces N  Minimum nonzero-offset dispersion traces (default: 8)
+  --min-branch-length-m M  Minimum physical branch aperture in metres
+  --min-branch-traces N  Legacy trace-count threshold
   --help                  Show help.
 EOF
   print_common_footer
@@ -135,12 +137,14 @@ RECURSIVE="0"
 INCLUDE_ROOT="0"
 FILE_LIST_NAME=""
 RECEIVER_SIDE=""  # 留空沿用配置；both 计算震源左右两侧
+MIN_BRANCH_LENGTH_M=""  # 留空沿用 config 中的 min_branch_length_m，单位米
 MIN_BRANCH_TRACES=""  # 留空沿用配置；只控制频散门槛，短支 CC 仍保存
 EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --receiver-side) RECEIVER_SIDE="$2"; shift 2 ;;
+    --min-branch-length-m) MIN_BRANCH_LENGTH_M="$2"; shift 2 ;;
     --min-branch-traces) MIN_BRANCH_TRACES="$2"; shift 2 ;;
     --config) CONFIG="$2"; shift 2 ;;
     --root-data-dir) ROOT_DATA_DIR="$2"; shift 2 ;;
@@ -197,6 +201,9 @@ CMD=(
 
 if [[ -n "${RECEIVER_SIDE}" ]]; then
   CMD+=(--receiver-side "${RECEIVER_SIDE}")
+fi
+if [[ -n "${MIN_BRANCH_LENGTH_M}" ]]; then
+  CMD+=(--min-branch-length-m "${MIN_BRANCH_LENGTH_M}")
 fi
 if [[ -n "${MIN_BRANCH_TRACES}" ]]; then
   CMD+=(--min-branch-traces "${MIN_BRANCH_TRACES}")

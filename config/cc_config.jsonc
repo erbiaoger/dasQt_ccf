@@ -18,7 +18,7 @@
     // Post-CC enhancement. Options: raw, tsi.
     "cc_enhance_method": "tsi",
     // CC numerical backend. Options: auto, cpu, cpp, torch, cupy. cpp requires cc-native.
-    "cc_backend": "cpu",
+    "cc_backend": "torch",
     // C++ 工作线程数；0 自动保留一个逻辑核心。
     "cc_threads": 0,
     // 兼容旧配置；C++ 已取消内存预算限制，此值不再限制分配。
@@ -69,9 +69,9 @@
     // right = 仅开启右支；left = 仅开启左支；both = 左右两支都开启。
     // 默认 right 保持原右支流程；需要双支时将此值改为 both。
     "receiver_side": "right",
-    // 每侧频散/自动拾取的最小 Branch traces：非零偏移的有效接收道数。
-    // 少于此值仍保存 CC，但不计算该侧频散、不自动拾取；零偏移道和补齐道不计入。
-    "min_branch_traces": 8,
+    // 每侧频散/自动拾取的最小分支孔径（米）：有效道最大与最小绝对偏移距之差。
+    // 小于此长度仍保存 CC，但不计算该侧频散、不自动拾取；补齐道不参与孔径计算。
+    "min_branch_length_m": 8.0,
     // 每侧接收窗口长度（米）；边界按真实存在的道截取，不借用另一侧数据。
     "offset": 50.0,
     // If true, show wiggle-style CC display where supported.
