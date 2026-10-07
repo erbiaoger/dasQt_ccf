@@ -166,15 +166,22 @@ TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加�
 
 ## 左支与双支批处理
 
-复用 `scripts/caculate_cc_tsi_from_folder.py`（单目录）与 `scripts/batch_caculate_cc_tsi_from_subfolders.py`（目录树），追加 `--receiver-side both --min-branch-traces 8`；用 `left` 仅算左支，默认 `right` 保持旧输出路径。所有模式支持原 raw/TSI 配置，新增分支保存到同一个带掩码 MAT。数据几何和短支规则见 [方法说明](../../docs/methods/receiver_branches.md)。
+在 `config/cc_config.jsonc` 中设置分支开关和最低有效道数，单目录和目录树计算脚本均自动读取，无需追加命令行参数：
+
+```jsonc
+"receiver_side": "both",  // right：仅开启右支；left：仅开启左支；both：两支都开启
+"min_branch_traces": 8    // 每侧最低非零偏移有效道数；不计零偏移道和补齐道
+```
+
+配置默认 `right`，保留旧右支行为；需要双支时改成 `both`。不足门槛的一侧仍保存 CC，但不计算频散、不自动拾取。复用 `scripts/caculate_cc_tsi_from_folder.py`（单目录）与 `scripts/batch_caculate_cc_tsi_from_subfolders.py`（目录树）。所有模式支持原 raw/TSI 配置，新增分支保存到同一个带掩码 MAT。数据几何和短支规则见 [方法说明](../../docs/methods/receiver_branches.md)。
 
 已有一键目录树 shell 参数已更新并带中文注释，默认从当前项目定位 `.venv`，用 uv 启动；远程服务器可通过 DASQT_REPO_DIR 指定项目目录。
 
 ```bash
 ./examples/03_ccf/run_multi_folder_compute.sh \
-  --config ./dasqt/config/cc_config.jsonc --root-data-dir /path/to/data \
+  --config ./examples/03_ccf/config/cc_config.jsonc --root-data-dir /path/to/data \
   --output-root /path/to/output --include-root --no-get-disp1-compatible \
-  --receiver-side both --min-branch-traces 8 --save-every 10 \
+  --save-every 10 \
   -- --cc-enhance raw
 ```
 
