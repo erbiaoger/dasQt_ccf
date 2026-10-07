@@ -71,7 +71,7 @@ EOF
 
 INPUT_ROOT=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/cc_tsi_plot_outputs_by_folder"
-GLOB_PATTERN="cc_stack_tsi_*.mat"
+GLOB_PATTERN="tsi_*.mat"
 FOLDER_GLOB=""
 STACK_SIZE="None"
 INTERVAL="None"

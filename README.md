@@ -163,3 +163,19 @@ TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加�
 例如 32 个有效文件保存为 20 + 12 两份，只有 12 个也会保存一份；整除时不额外生成空结果。
 文件名的 `n12` 与 MAT 的 `actual_file_count` 记录该组实际文件数，`source_files` 记录来源。
 单目录、多目录入口均自动采用此行为，无需额外参数。
+
+## 左支与双支批处理
+
+复用 `scripts/caculate_cc_tsi_from_folder.py`（单目录）与 `scripts/batch_caculate_cc_tsi_from_subfolders.py`（目录树），追加 `--receiver-side both --min-branch-traces 8`；用 `left` 仅算左支，默认 `right` 保持旧输出路径。所有模式支持原 raw/TSI 配置，新增分支保存到同一个带掩码 MAT。数据几何和短支规则见 [方法说明](../../docs/methods/receiver_branches.md)。
+
+已有一键目录树 shell 参数已更新并带中文注释，默认从当前项目定位 `.venv`，用 uv 启动；远程服务器可通过 DASQT_REPO_DIR 指定项目目录。
+
+```bash
+./examples/03_ccf/run_multi_folder_compute.sh \
+  --config ./dasqt/config/cc_config.jsonc --root-data-dir /path/to/data \
+  --output-root /path/to/output --include-root --no-get-disp1-compatible \
+  --receiver-side both --min-branch-traces 8 --save-every 10 \
+  -- --cc-enhance raw
+```
+
+终端显示文件读取、各侧实际窗口分组、叠加/增强及保存路径。输出频散请使用 dispersion_picker 载入版本 2 MAT；旧单谱导出脚本尚未适配双支 MAT，需先在界面导出当前炮单侧 CC。不要把补齐数据直接输入旧批量成像脚本。

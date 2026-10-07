@@ -66,7 +66,7 @@ EOF
 
 INPUT_DIR=""
 OUTPUT_DIR="${SCRIPT_DIR}/outputs/restack_single"
-GLOB_PATTERN="cc_stack_tsi_*.mat"
+GLOB_PATTERN="tsi_*.mat"
 STACK_SIZE="None"
 INTERVAL="None"
 START_INDEX="0"
