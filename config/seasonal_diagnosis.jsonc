@@ -1,8 +1,7 @@
 // 长白山多位置季节诊断。所有位置使用测线绝对坐标（m）。
 {
   "raw_root": "/mnt/nas-downstairs/DAS/ChangBai/ChangBai_20250317",
-  "cc_root": "./outputs/cc_tsi_outputs_by_folder",
-  "output_dir": "./outputs/seasonal_diagnosis_full_day",
+  "output_dir": "./outputs/seasonal_preprocessing_full_day",
   "date_start": "2025-03-27",
   "date_end": "2025-06-15",
   "time_start": "00:00",
@@ -29,19 +28,10 @@
   "fk_df_hz": 0.5,
   "fk_vmin_mps": 200,
   "fk_vmax_mps": 1200,
-  // 正、负时延分别用Park计算频散；每列峰/背景>=2且相邻峰速度差<=100m/s才算连续。
-  "disp_fmin_hz": 0.5,
-  "disp_fmax_hz": 50,
-  "disp_df_hz": 0.5,
-  "disp_vmin_mps": 200,
-  "disp_vmax_mps": 1200,
-  "disp_dv_mps": 10,
-  "disp_min_contrast": 2,
-  "disp_max_ridge_jump_mps": 100,
   // 逐日逐位置诊断图数量较多；false仅生成季节汇总图和数值数据。
   "plot_daily_details": true,
   "plot_monthly_details": true,
-  // 固定春季与夏季代表日，用相同色标对照CC波形及两侧频散。
+  // 固定春季与夏季代表日，用相同色标对照原始频谱、时频和FK。
   "comparison_dates": ["2025-03-27", "2025-06-10"],
   "comparison_positions_m": [400, 4400, 8400]
 }

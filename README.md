@@ -189,11 +189,11 @@ TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加�
 
 # 多位置季节诊断
 
-运行 `./run_seasonal_diagnosis.sh` 可按 [配置文件](config/seasonal_diagnosis.jsonc) 分析 2025 年 3–6 月的原始 DAT 和已有 CC MAT。默认使用 400、1400、…、9400 m 十个位置、每天 00:00–24:00 的全部分钟文件；频谱、时频与 FK 保存 0–50 Hz，频散从 0.5 Hz 起算。新结果写入 `outputs/seasonal_diagnosis_full_day`，原始 NAS 目录只读，原有 08:00–16:00 结果仍在 `outputs/seasonal_diagnosis_detailed`。`--phase raw|cc|plot` 可以分别续算原始数据、CC 或仅重画图；`--phase status` 只读查看完成数。`--date-start`、`--date-end`、`--dates`、`--positions-m`、`--time-start`、`--time-end`、`--raw-step-minutes`、`--tf-window-s`、`--fk-aperture-m` 和 `--output-dir` 可覆盖配置。
+运行 `./run_seasonal_diagnosis.sh` 可按 [配置文件](config/seasonal_diagnosis.jsonc) 分析 2025 年 3–6 月的原始 DAT 的预处理相关指标。默认使用 400、1400、…、9400 m 十个位置、每天 00:00–24:00 的全部分钟文件；频谱、时频与 FK 保存 0–50 Hz。新结果写入 `outputs/seasonal_preprocessing_full_day`，原始 NAS 目录只读，原有 08:00–16:00 结果仍在 `outputs/seasonal_diagnosis_detailed`。`--phase raw|plot` 可以续算原始数据或仅重画图；`--phase status` 只读查看完成数。`--date-start`、`--date-end`、`--dates`、`--positions-m`、`--time-start`、`--time-end`、`--raw-step-minutes`、`--tf-window-s`、`--fk-aperture-m` 和 `--output-dir` 可覆盖配置。
 
-频率、速度及其他任意配置项还可用 `--set 键=值` 覆盖，例如 `--set disp_fmax_hz=20 --set fk_vmin_mps=250`。数组需用 JSON 格式，例如 `--set 'positions_m=[400,4400,8400]'`。
+频率、速度及其他任意配置项还可用 `--set 键=值` 覆盖，例如 `--set spectrum_fmax_hz=50 --set fk_vmin_mps=250`。数组需用 JSON 格式，例如 `--set 'positions_m=[400,4400,8400]'`。
 
-每个日期各有压缩 HDF5 缓存，存放每分钟每位置的谱、时频和局部 FK 数值及坐标。输入路径、大小、修改时间和计算参数共同决定缓存名；中断后重跑会跳过已完成文件。输出还包括输入清单、配置快照、失败清单、逐 DAT／逐 MAT 表、每日／每月统计表、自动生成的 `report.md` 及 PNG/PDF 图；不生成 SVG。CC 正负时延分开计算；不同 CC 参数签名分开出图。月统计是**先求每天的中位数，再求这些日中位数的月中位数**，四分位范围也基于日中位数；缺失数据不会计为低质量。
+每个日期各有压缩 HDF5 缓存，存放每分钟每位置的谱、时频和局部 FK 数值及坐标。输入路径、大小、修改时间和计算参数共同决定缓存名；中断后重跑会跳过已完成文件。输出还包括输入清单、配置快照、失败清单、逐 DAT 表、每日／每月统计表、自动生成的 `report.md` 及 PNG/PDF 图；不生成 SVG。只计算原始数据的 RMS、RMS 变异系数、无效通道比例、频谱、时频、FK 和目标/背景功率比。月统计是**先求每天的中位数，再求这些日中位数的月中位数**，四分位范围也基于日中位数；缺失数据不会计为低质量。
 
 例如先快速核对春夏两个日期和三个位置：
 
@@ -203,4 +203,4 @@ TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加�
   --output-dir ./outputs/seasonal_diagnosis_check
 ```
 
-此快速检查仅用于核对位置、坐标轴和流程；判断季节趋势需使用默认的全部分钟文件。`plot_color_scales.json` 记录跨日期统一的时频和 FK 色标。CC 频散图同时保存空间混叠及有限孔径有效区域标记；频散覆盖率只在预设有效速度范围内判定，`ridge_contrast` 为有效脊线峰值相对背景的对数比。
+此快速检查仅用于核对位置、坐标轴和流程；判断季节趋势需使用默认的全部分钟文件。`plot_color_scales.json` 记录跨日期统一的时频和 FK 色标。旧 CC 诊断结果保留在原输出目录；新目录只包含预处理诊断结果。

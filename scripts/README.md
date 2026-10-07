@@ -11,7 +11,7 @@
 - `backfill_shot_position_meta.py`：为旧 MAT 结果补齐 shot 空间元数据。
 - `plot_cc_m3_shots.py`：绘制 shot 级 CC 与 m3 联图。
 - `convert_cc_mat_to_timeslice_h5.py`：将每个 MAT 转换为一个 HDF5 CCF 时间片并生成 `manifest.json`，供长时 CCF GUI 使用。
-- `seasonal_diagnosis.py`、`plot_seasonal_diagnosis_detailed.py`、`seasonal_diagnosis_report.py`：全天多位置原始数据和 CC 频散诊断、绘图及报告；使用 `../run_seasonal_diagnosis.sh`。
+- `seasonal_diagnosis.py`、`plot_seasonal_diagnosis_detailed.py`、`seasonal_diagnosis_report.py`：全天多位置原始 DAT 预处理指标诊断、绘图及报告；使用 `../run_seasonal_diagnosis.sh`。
 
 ## 运行方式
 
