@@ -5,7 +5,7 @@ set -euo pipefail
 
 
 # 默认使用当前脚本所在项目；DASQT_REPO_DIR 可指定远程服务器的项目路径。
-DASQT_REPO_DIR="${DASQT_REPO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+DASQT_REPO_DIR="/csim2/zhangzhiyu/MyProjects/DAS_Procee_Show"
 DASQT_VENV_ACTIVATE="${DASQT_REPO_DIR}/.venv/bin/activate"
 
 ensure_dasqt_env() {

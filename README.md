@@ -212,3 +212,23 @@ TSI 为非线性运算，分组增强再叠加通常不等于全部文件叠加�
 拾取界面调整偏移范围后，按裁剪后的真实接收孔径重新判断。补齐道不参与判断，
 仅一个有效道也不能成像。新配置与 GUI 使用米，支持小数；旧文件只有
 `min_branch_traces` 时，按旧门槛乘该数据的道间距换算，新字段优先。
+
+### 文件内与跨文件叠加分别设置
+
+配置和 GUI 的 `Advanced Settings → CC Compute` / `Batch CCF → Compute`
+分别提供两个选项：
+
+```jsonc
+"file_stacking_method": "linear", // 单文件内各时间窗 CC 的叠加，默认 linear
+"stacking_method": "pws",         // 跨文件 CC 结果叠加，保持已有字段与设置
+```
+
+Torch/CuPy 的文件内 linear 逐批加入在线累加器，每个炮/道对仅保留
+一份求和状态和有效计数；加入后不保存完整时间窗 CC 历史，也不创建 PWS 相位状态。
+完成一个文件后输出一个叠加结果，跨文件阶段再使用独立方法。
+选择文件内 PWS 会额外保留相位累加状态；其他方法可能需要历史片段。
+整文件驻留数据、FFT 与 TSI 工作空间仍有独立生命周期，所以此改动不代表所有显存都消失。
+两层 PWS 不等价于对所有原始时间窗一次 PWS，已有逐文件归一化也保持原行为。
+命令行可用 `--file-stacking-method linear --cross-file-stacking-method pws`。
+仅有旧 `stacking_method` 的直接内部参数调用保持原行为；配置入口新增默认 linear。
+原生 `cpp_cuda` Session 已区分两层方法，更新后需重建 `native/cc_cuda_engine`。

@@ -2,11 +2,11 @@
 {
   "raw_root": "/mnt/nas-downstairs/DAS/ChangBai/ChangBai_20250317",
   "output_dir": "./outputs/seasonal_preprocessing_full_day",
-  "date_start": "2025-03-27",
-  "date_end": "2025-06-15",
+  "date_start": "2025-03-23",
+  "date_end": "2025-10-09",
   "time_start": "00:00",
   "time_end": "24:00",
-  "positions_m": [400, 1400, 2400, 3400, 4400, 5400, 6400, 7400, 8400, 9400],
+  "positions_m": [500, 1500, 2500, 3500, 4500, 5500, 6500, 7500, 8500, 9500],
   // 1=分析时段内每一分钟DAT；10=每10分钟取一个DAT。
   "raw_step_minutes": 1,
   // 不同日期并行处理的CPU进程数；每个进程逐分钟读DAT并独立写当日缓存。
@@ -15,16 +15,16 @@
   "tf_window_s": 60,
   // 频谱采用10秒Welch窗，50%重叠；频谱和时频矩阵保存0–50 Hz。
   "psd_window_s": 10,
-  "spectrum_fmax_hz": 50,
+  "spectrum_fmax_hz": 100,
   "target_fmin_hz": 3,
   "target_fmax_hz": 15,
   "background_low_hz": [0.5, 3],
   "background_high_hz": [15, 50],
   // FK以指定位置为中心取500 m，10秒子窗，时间抗混叠抽取4倍。
   "fk_aperture_m": 500,
-  "fk_chunk_s": 10,
+  "fk_chunk_s": 60,
   "fk_time_decimation": 4,
-  "fk_fmax_hz": 50,
+  "fk_fmax_hz": 100,
   "fk_df_hz": 0.5,
   "fk_vmin_mps": 200,
   "fk_vmax_mps": 1200,
@@ -33,5 +33,5 @@
   "plot_monthly_details": true,
   // 固定春季与夏季代表日，用相同色标对照原始频谱、时频和FK。
   "comparison_dates": ["2025-03-27", "2025-06-10"],
-  "comparison_positions_m": [400, 4400, 8400]
+  "comparison_positions_m": [500, 1500, 2500, 3500, 4500, 5500, 6500, 7500, 8500, 9500]
 }
