@@ -3,7 +3,7 @@
 #
 # Purpose:
 #   1) Call `stack_saved_cc_mat.py`.
-#   2) Read one output folder containing `cc_stack*.mat`.
+#   2) Read one output folder containing saved CC MAT files.
 #   3) Save `restack*.mat`, summary plot, and optional shot figures.
 #
 # Usage:
@@ -21,9 +21,10 @@
 #     --cc-device cpu
 #
 # 参数：
-#   --input-dir PATH     必填。包含已保存 `cc_stack*.mat` 的目录。
+#   --input-dir PATH     包含已保存 CC MAT 文件的目录。
 #   --output-dir PATH    `restack*.mat` 和图像的输出目录。
-#   --glob PATTERN       MAT 文件名模式。默认：cc_stack_tsi_*.mat
+#   --glob PATTERN       MAT 文件名模式。默认：raw_*.mat
+#   --receiver-side SIDE 双侧 MAT 的处理侧：auto | left | right | both。默认：auto
 #   --stack-size VALUE   窗口文件数。使用 None 表示全部文件。默认：None
 #   --interval VALUE     窗口步长。使用 None 表示单组。默认：None
 #   --start-index N      MAT 文件起始索引。默认：0
@@ -47,9 +48,10 @@ Usage:
   $(basename "$0") --input-dir PATH [options] [-- EXTRA_PY_ARGS...]
 
 Options:
-  --input-dir PATH      Required. Directory containing saved MAT files.
+  --input-dir PATH      Directory containing saved MAT files.
   --output-dir PATH     Default: ${SCRIPT_DIR}/outputs/restack_single
-  --glob PATTERN        Default: cc_stack_tsi_*.mat
+  --glob PATTERN        Default: raw_*.mat
+  --receiver-side SIDE  Default: auto (both sides in one MAT and figure)
   --stack-size VALUE    Default: None
   --interval VALUE      Default: None
   --start-index N       Default: 0
@@ -64,15 +66,16 @@ EOF
   print_common_footer
 }
 
-INPUT_DIR=""
+INPUT_DIR="/csim2/zhangzhiyu/MyProjects/dasQt_examples/CC_ChangBai_select/outputs/cc_tsi_outputs_by_folder/2025-08-23"
 OUTPUT_DIR="${SCRIPT_DIR}/outputs/restack_single"
 GLOB_PATTERN="tsi_*.mat"
+RECEIVER_SIDE="auto"
 STACK_SIZE="None"
 INTERVAL="None"
 START_INDEX="0"
-STACK_METHOD="robust"
-CC_BACKEND="cpu"
-CC_DEVICE="cpu"
+STACK_METHOD="pws"
+CC_BACKEND="torch"
+CC_DEVICE="cuda"
 CC_DTYPE="float32"
 PLOT_NAME="local_cc_preview.png"
 SHOW="0"
@@ -83,6 +86,7 @@ while [[ $# -gt 0 ]]; do
     --input-dir) INPUT_DIR="$2"; shift 2 ;;
     --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
     --glob) GLOB_PATTERN="$2"; shift 2 ;;
+    --receiver-side) RECEIVER_SIDE="$2"; shift 2 ;;
     --stack-size) STACK_SIZE="$2"; shift 2 ;;
     --interval) INTERVAL="$2"; shift 2 ;;
     --start-index) START_INDEX="$2"; shift 2 ;;
@@ -108,6 +112,7 @@ CMD=(
   "${SCRIPT_DIR}/scripts/stack_saved_cc_mat.py"
   --input-dir "${INPUT_DIR}"
   --glob "${GLOB_PATTERN}"
+  --receiver-side "${RECEIVER_SIDE}"
   --output-dir "${OUTPUT_DIR}"
   --stack-size "${STACK_SIZE}"
   --interval "${INTERVAL}"

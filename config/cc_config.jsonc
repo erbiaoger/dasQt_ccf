@@ -4,13 +4,13 @@
     "acf_time_norm": "rma",
     "acf_freq_norm": "no",
     // Pre-filter minimum frequency in Hz.
-    "freqmin": 5.0,
+    "freqmin": 3.0,
     // Pre-filter maximum frequency in Hz.
-    "freqmax": 40.0,
+    "freqmax": 20.0,
     // Frequency normalization. Options: no, rma, phase_only.
     "freq_norm": "rma",
     // Time normalization. Options: no, rma, one_bit.
-    "time_norm": "rma",
+    "time_norm": "no",
     // Correlation method. Options: coherency, xcorr, deconv.
     "cc_method": "xcorr",
     // Stacking method. Options: linear, pws, robust.
@@ -29,9 +29,9 @@
     // Preferred CC execution device. Options: auto, cpu, mps, cuda, all_mps, all_cuda.
     "cc_device": "auto",
     // How many CC chunks to process together in one backend batch.
-    "cc_batch_chunks": 8,
+    "cc_batch_chunks": 12,
     // How many local shots to correlate together per CC backend batch in single_shot_local_cc mode.
-    "cc_shot_batch_size": 4,
+    "cc_shot_batch_size": 395,
     // CC compute dtype. Options: float32, float64.
     "cc_dtype": "float32",
     // Time-domain smoothing length.
@@ -39,15 +39,15 @@
     // Spectral smoothing length.
     "smoothspect_N": 5,
     // Maximum lag in seconds kept in the output gather.
-    "maxlag": 0.4,
+    "maxlag": 2.0,
     // Channel-quality threshold; channels with std above this value are rejected.
     "max_over_std": 1000000000,
     // Window length in seconds per CC chunk.
     "cc_len": 5.0,
     // Segment minimum distance in meters.
-    "xmin": 614.0,
+    "xmin": 100.0,
     // Segment maximum distance in meters.
-    "xmax": 1050.0,
+    "xmax": 10000.0,
     // Default save folder for CC outputs.
     "cc_path": "./examples",
     // How many next files to stack when using the batch-style CC action.
@@ -67,16 +67,18 @@
     // Shot position in meters for single-shot display.
     "xshot": 1.0,
     // Shot spacing in meters for all-shot extraction.
-    "dshot": 2.5,
+    "dshot": 50,
     // 空间接收分支开关（与正负时延无关）：
     // right = 仅开启右支；left = 仅开启左支；both = 左右两支都开启。
     // 默认 right 保持原右支流程；需要双支时将此值改为 both。
-    "receiver_side": "right",
-    // 每侧频散/自动拾取的最小分支孔径（米）：有效道最大与最小绝对偏移距之差。
-    // 小于此长度仍保存 CC，但不计算该侧频散、不自动拾取；补齐道不参与孔径计算。
-    "min_branch_length_m": 8.0,
+    "receiver_side": "both",
+    // 最小分支孔径（米）；null 沿用下面的道数门槛，设置米数时优先使用米数。
+    "min_branch_length_m": null,
+    // 每侧频散/自动拾取的最小 Branch traces：非零偏移的有效接收道数。
+    // 少于此值仍保存 CC，但不计算该侧频散、不自动拾取；零偏移道和补齐道不计入。
+    "min_branch_traces": 1,
     // 每侧接收窗口长度（米）；边界按真实存在的道截取，不借用另一侧数据。
-    "offset": 50.0,
+    "offset": 200.0,
     // If true, show wiggle-style CC display where supported.
     "cc_wigb": false,
     // CC fill mode. Common values: both, positive, negative, none.
@@ -86,7 +88,7 @@
     // Spatial downsampling factor applied before CC computation. 1 keeps the original spacing.
     "space_downsample": 1,
     // Temporal downsampling factor applied before CC computation. 1 keeps the original sample interval.
-    "time_downsample": 2,
+    "time_downsample": 1,
     // Display downsample step along distance/channel axis.
     "ddx": 3,
     // Display downsample step along lag/time axis.

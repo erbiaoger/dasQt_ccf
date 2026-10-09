@@ -65,6 +65,7 @@ cd /Users/zhangzhiyu/MyProjects/dasQt/examples/03_ccf
   --output-root ./outputs/cc_tsi_outputs_by_folder
 
 # 3. 二次叠加
+# 对 data_left/data_right 双支 MAT，默认生成单个双支结果 MAT，并将左右支画在同一张图中。
 ./run_single_folder_stack.sh \
   --input-dir ./outputs/cc_tsi_outputs_single \
   --output-dir ./outputs/restack_single \
