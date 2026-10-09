@@ -14,6 +14,9 @@
     // Correlation method. Options: coherency, xcorr, deconv.
     "cc_method": "xcorr",
     // Stacking method. Options: linear, pws, robust.
+    // 文件内时间窗叠加：linear 使用在线累加器，仅保留一份叠加状态；pws 使用相位加权。
+    "file_stacking_method": "linear",
+    // 跨文件叠加方法，独立于 file_stacking_method。
     "stacking_method": "pws",
     // Post-CC enhancement. Options: raw, tsi.
     "cc_enhance_method": "tsi",
