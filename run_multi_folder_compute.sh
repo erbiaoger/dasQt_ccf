@@ -116,9 +116,9 @@ CC_MEMORY_BUDGET_MB=""  # 原生预算 MiB；8192 = 8 GiB，不等于物理内�
 TSI_FILES_PER_GROUP=""  # 每 N 个有效文件叠加后做 TSI；0 沿用旧行为，独立于 SAVE_EVERY
 CC_DEVICE=""  # 留空沿用配置中的 cc_device；显式指定 cuda/mps/cpu/auto 时覆盖配置
 
-ROOT_DATA_DIR="/mnt/nas-downstairs/DAS/ChangBai/ChangBai_20250317"
+ROOT_DATA_DIR=""
 OUTPUT_ROOT="${SCRIPT_DIR}/outputs/cc_tsi_outputs_by_folder"
-SAVE_EVERY="120"
+SAVE_EVERY="30"
 START_INDEX="0"
 END_INDEX=""
 WORKERS="1"
@@ -127,12 +127,12 @@ CC_PREWHITEN_MODE=""
 CC_PREWHITEN_TILE_CHANNELS=""
 CC_MEMORY_SAFETY_FRACTION=""
 PROFILE_STAGES="0"  # 阶段日志开关：0 关闭，1 开启
-DATE_START="2025-08-23"
-TIME_START="08:00"
-TIME_END="16:00"
+DATE_START=""
+TIME_START=""
+TIME_END=""
 # 文件名中的时间戳格式。示例文件 ..._20260603_235022.778.h5 使用：
 # %Y%m%d_%H%M%S（不含毫秒也可以）。启用时间过滤时请确认此处格式正确。
-FILENAME_TIME_FORMAT="%Y-%m-%d-%H-%M-%S"
+FILENAME_TIME_FORMAT="%Y%m%d_%H%M%S"
 RECURSIVE="0"
 INCLUDE_ROOT="0"
 FILE_LIST_NAME=""

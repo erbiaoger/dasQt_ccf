@@ -3,14 +3,13 @@
 读取已保存的 CC .mat 文件并做二次叠加与绘图。
 
 用途:
-1) 从单个目录读取旧版 `data` MAT 或双侧 `data_left`/`data_right` MAT。
+1) 从单个目录读取 `cc_stack*.mat` 或 `cc_stack_tsi_*.mat`。
 2) 按给定窗口执行二次叠加，输出 `restack_*.mat`。
 3) 生成汇总预览图、逐 shot 图和按 shot 位置拼接图。
 4) 支持显式指定叠加后端，便于手动选择 CPU 或 GPU。
 
 输入文件格式兼容 save_stack_shots 的 MAT 结构：
 - `data`: `(nshot, nt, nx)` 或 `(nt, nx)`
-- 双侧文件使用 `data_left`、`data_right`；叠加后仍存于同一个 MAT 文件。
 - `dt`: 标量
 - `dx`: 标量
 - `dshot`: 可选标量
@@ -62,9 +61,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
 import numpy as np
-from scipy.io import loadmat, savemat, whosmat
+from scipy.io import loadmat, savemat
 
 from dasqt.utils.imshow import (
     configure_publication_style,
@@ -74,17 +72,6 @@ from dasqt.utils.imshow import (
 )
 
 configure_publication_style()
-for font_family in ("Times New Roman", "Times", "DejaVu Serif"):
-    try:
-        font_manager.findfont(
-            font_manager.FontProperties(family=font_family),
-            fallback_to_default=False,
-        )
-    except ValueError:
-        continue
-    plt.rcParams["font.family"] = [font_family]
-    plt.rcParams["font.serif"] = [font_family]
-    break
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 
@@ -163,17 +150,14 @@ def _to_mat_scalar(mat: dict[str, Any], key: str) -> Any:
 
 def load_cc_mat(
     mat_file: Path,
-    *,
-    receiver_side: str | None = None,
 ) -> tuple[np.ndarray, float, float, float | None, dict[str, Any]]:
     mat = loadmat(mat_file)
-    data_key = "data" if receiver_side is None else f"data_{receiver_side}"
-    if data_key not in mat:
-        raise ValueError(f"{mat_file.name} missing key: {data_key}")
+    if "data" not in mat:
+        raise ValueError(f"{mat_file.name} missing key: data")
     if "dt" not in mat or "dx" not in mat:
         raise ValueError(f"{mat_file.name} missing key: dt/dx")
 
-    data = np.asarray(mat[data_key])
+    data = np.asarray(mat["data"])
     data = np.squeeze(data)
     if data.ndim == 2:
         cc = data[None, :, :]
@@ -195,22 +179,6 @@ def load_cc_mat(
         "time_norm": _to_mat_scalar(mat, "time_norm"),
         "cc_method": _to_mat_scalar(mat, "cc_method"),
     }
-    if receiver_side is not None:
-        extra_meta["receiver_side"] = receiver_side
-        for key in (
-            "shot_index", "shot_source_channel", "shot_source_x_m", "lag_axis_s",
-            "receiver_order", "input_lag_mode", "format_version",
-        ):
-            if key in mat:
-                extra_meta[key] = mat[key]
-        for source_key, output_key in (
-            (f"valid_mask_{receiver_side}", "valid_mask"),
-            (f"offsets_{receiver_side}_m", "offsets_m"),
-            (f"receiver_x_{receiver_side}_m", "receiver_x_m"),
-            (f"status_{receiver_side}", "status"),
-        ):
-            if source_key in mat:
-                extra_meta[output_key] = mat[source_key]
     return np.asarray(cc, dtype=np.float32), dt, dx, dshot, extra_meta
 
 
@@ -251,45 +219,6 @@ def save_stack_shots_mat(
     savemat(output_file, mat_dict)
 
 
-def save_branch_stack_mat(
-    output_file: Path,
-    stacks: dict[str, np.ndarray],
-    metadata: dict[str, dict[str, Any]],
-    *,
-    dt: float,
-    dx: float,
-    dshot: float | None,
-    source_files: list[Path],
-) -> None:
-    first_meta = next(iter(metadata.values()))
-    payload: dict[str, Any] = {
-        "format": "dasqt_receiver_branches",
-        "receiver_side": "both" if len(stacks) == 2 else next(iter(stacks)),
-        "dt": float(dt),
-        "dx": float(dx),
-        "source_files": np.array([p.name for p in source_files], dtype=object),
-    }
-    if dshot is not None:
-        payload["dshot"] = float(dshot)
-    side_fields = {"receiver_side", "valid_mask", "offsets_m", "receiver_x_m", "status"}
-    for key, value in first_meta.items():
-        if key not in side_fields and value is not None:
-            payload[key] = value
-    for side, data in stacks.items():
-        payload[f"data_{side}"] = data
-        side_meta = metadata[side]
-        for key, output_key in (
-            ("valid_mask", f"valid_mask_{side}"),
-            ("offsets_m", f"offsets_{side}_m"),
-            ("receiver_x_m", f"receiver_x_{side}_m"),
-            ("status", f"status_{side}"),
-        ):
-            if key in side_meta:
-                payload[output_key] = side_meta[key]
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    savemat(output_file, payload)
-
-
 def build_windows(
     files: list[Path], stack_size: int | None, interval: int | None
 ) -> list[tuple[int, int, list[Path]]]:
@@ -314,111 +243,6 @@ def build_windows(
     return windows
 
 
-def stack_window_side(
-    files: list[Path],
-    side: str | None,
-    *,
-    stacking_method: str,
-    cc_backend: str,
-    cc_device: str,
-    cc_dtype: str,
-) -> tuple[np.ndarray, float, float, float | None, dict[str, Any]]:
-    cc_list: list[np.ndarray] = []
-    dt_ref: float | None = None
-    dx_ref: float | None = None
-    dshot_ref: float | None = None
-    meta_ref: dict[str, Any] | None = None
-    shape_ref: tuple[int, int, int] | None = None
-
-    for path in files:
-        cc, dt, dx, dshot, metadata = load_cc_mat(path, receiver_side=side)
-        if dt_ref is None:
-            dt_ref, dx_ref, dshot_ref = dt, dx, dshot
-            meta_ref, shape_ref = metadata, cc.shape
-        else:
-            if cc.shape != shape_ref:
-                raise ValueError(f"Shape mismatch: {path.name}={cc.shape}, ref={shape_ref}")
-            if not np.isclose(dt, dt_ref) or not np.isclose(dx, dx_ref):
-                raise ValueError(f"dt/dx mismatch: {path.name}")
-            if (dshot is None) != (dshot_ref is None) or (
-                dshot is not None and not np.isclose(dshot, dshot_ref)
-            ):
-                raise ValueError(f"dshot mismatch: {path.name}")
-            if side is not None:
-                for key in ("shot_index", "shot_source_x_m", "valid_mask", "receiver_x_m"):
-                    if key not in meta_ref or key not in metadata:
-                        raise ValueError(f"{path.name} missing branch geometry: {key}")
-                    expected = np.asarray(meta_ref[key])
-                    actual = np.asarray(metadata[key])
-                    if expected.shape != actual.shape or not np.array_equal(
-                        expected, actual, equal_nan=True
-                    ):
-                        raise ValueError(f"{key} mismatch: {path.name}")
-        cc_list.append(cc)
-
-    cc_array = np.asarray(cc_list)  # (nfile, nshot, nt, nx)
-    _, nshot, nt, nx = cc_array.shape
-    stacked = np.zeros((nshot, nt, nx), dtype=cc_array.dtype)
-    for shot in range(nshot):
-        stacked[shot] = stack_cc_results(
-            [cc_array[file_index, shot] for file_index in range(cc_array.shape[0])],
-            dt=float(dt_ref),
-            stacking_method=stacking_method,
-            cc_backend=cc_backend,
-            cc_device=cc_device,
-            cc_dtype=cc_dtype,
-        )
-    return stacked, float(dt_ref), float(dx_ref), dshot_ref, meta_ref
-
-
-def combine_branches_by_position(
-    stacks: dict[str, np.ndarray],
-    metadata: dict[str, dict[str, Any]],
-    dx: float,
-    *,
-    shot_index: int | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Average valid left/right traces on one physical receiver coordinate grid."""
-    positions_list: list[np.ndarray] = []
-    traces_list: list[np.ndarray] = []
-    nt: int | None = None
-    nshot: int | None = None
-    for side, stack in stacks.items():
-        data = np.asarray(stack)
-        if data.ndim != 3:
-            raise ValueError(f"data_{side} must have shape (nshot, nt, nx)")
-        if nt is None:
-            nshot, nt = data.shape[:2]
-        elif data.shape[:2] != (nshot, nt):
-            raise ValueError("Left and right shot/time dimensions differ")
-        coords = np.asarray(metadata[side]["receiver_x_m"], dtype=float)
-        mask = np.asarray(metadata[side]["valid_mask"], dtype=bool)
-        if coords.shape != (data.shape[0], data.shape[2]) or mask.shape != coords.shape:
-            raise ValueError(f"data_{side} receiver geometry shape mismatch")
-        if shot_index is not None:
-            selection = slice(shot_index, shot_index + 1)
-            data, coords, mask = data[selection], coords[selection], mask[selection]
-        keep = mask & np.isfinite(coords)
-        if np.any(keep):
-            positions_list.append(coords[keep])
-            traces_list.append(np.moveaxis(data, 1, -1)[keep])
-    if not positions_list:
-        raise ValueError("No valid receiver traces to plot")
-    positions = np.concatenate(positions_list)
-    traces = np.concatenate(traces_list)
-    origin = float(positions.min())
-    indices = np.rint((positions - origin) / float(dx)).astype(int)
-    acc = np.zeros((nt, int(indices.max()) + 1), dtype=np.float64)
-    counts = np.zeros(indices.max() + 1, dtype=np.int64)
-    for index, trace in zip(indices, traces):
-        acc[:, index] += trace
-        counts[index] += 1
-    combined = np.zeros_like(acc, dtype=np.float32)
-    occupied = counts > 0
-    combined[:, occupied] = (acc[:, occupied] / counts[occupied]).astype(np.float32)
-    return combined, origin + np.arange(combined.shape[1], dtype=float) * float(dx)
-
-
 def plot_stacks(
     stacks: list[dict[str, Any]],
     dt: float,
@@ -439,35 +263,10 @@ def plot_stacks(
 
     for i, item in enumerate(stacks):
         ax = axes_flat[i]
-        source_x = None
-        if "branches" in item:
-            branches = item["branches"]
-            first_side = next(iter(branches))
-            shot_index = int(branches[first_side].shape[0] // 2)
-            cc, x_centers = combine_branches_by_position(
-                branches, item["metadata"], dx, shot_index=shot_index
-            )
-            nshot = int(branches[first_side].shape[0])
-            source_x = float(np.asarray(
-                item["metadata"][first_side]["shot_source_x_m"]
-            ).ravel()[shot_index])
-        else:
-            cc_data = np.asarray(item["data"])
-            shot_index = int(cc_data.shape[0] // 2) if item.get("receiver_x_m") is not None else 0
-            cc = cc_data[shot_index] if cc_data.ndim == 3 else cc_data
-            nt, nx = cc.shape
-            receiver_x_m = item.get("receiver_x_m")
-            if receiver_x_m is not None:
-                x_centers = np.asarray(receiver_x_m)[shot_index].ravel()
-                keep = np.isfinite(x_centers)
-                if item.get("valid_mask") is not None:
-                    keep &= np.asarray(item["valid_mask"])[shot_index].ravel().astype(bool)
-                x_centers = x_centers[keep]
-                cc = cc[:, keep]
-            else:
-                x_centers = np.arange(nx, dtype=float) * float(dx)
-            nshot = int(cc_data.shape[0]) if cc_data.ndim == 3 else 1
-        nt = cc.shape[0]
+        cc_data = np.asarray(item["data"])
+        cc = cc_data[0] if cc_data.ndim == 3 else cc_data
+        nt, nx = cc.shape
+        x_centers = np.arange(nx, dtype=float) * float(dx)
         t_centers = (np.arange(nt, dtype=float) - float(nt // 2)) * float(dt)
         vmax = float(np.percentile(np.abs(cc), 99))
         if vmax == 0:
@@ -484,10 +283,9 @@ def plot_stacks(
             rasterized=False,
         )
         ax.set_aspect("auto")
-        if source_x is not None:
-            ax.axvline(source_x, color="black", linewidth=0.6, linestyle="--")
+        nshot = int(cc_data.shape[0]) if cc_data.ndim == 3 else 1
         ax.set_title(
-            f"Stack {i + 1}: idx[{item['start']}, {item['end']}], nshot={nshot} (show shot {shot_index})"
+            f"Stack {i + 1}: idx[{item['start']}, {item['end']}], nshot={nshot} (show shot 0)"
         )
         ax.set_xlabel("Distance (m)")
         ax.set_ylabel("Time (s)")
@@ -513,16 +311,9 @@ def _plot_cc_image(
     *,
     title: str,
     x_start: float = 0.0,
-    x_centers: np.ndarray | None = None,
-    source_x: float | None = None,
 ) -> None:
     nt, nx = cc.shape
-    if x_centers is None:
-        x_centers = float(x_start) + np.arange(nx, dtype=float) * float(dx)
-    else:
-        x_centers = np.asarray(x_centers, dtype=float).ravel()
-        if x_centers.size != nx:
-            raise ValueError("x_centers length must match CC receiver axis")
+    x_centers = float(x_start) + np.arange(nx, dtype=float) * float(dx)
     t_centers = (np.arange(nt, dtype=float) - float(nt // 2)) * float(dt)
     vmax = float(np.percentile(np.abs(cc), 99))
     if vmax == 0:
@@ -540,8 +331,6 @@ def _plot_cc_image(
         rasterized=False,
     )
     ax.set_aspect("auto")
-    if source_x is not None:
-        ax.axvline(source_x, color="black", linewidth=0.6, linestyle="--")
     ax.set_title(title)
     ax.set_xlabel("Distance (m)")
     ax.set_ylabel("Time (s)")
@@ -553,48 +342,6 @@ def _plot_cc_image(
     plt.close(fig)
 
 
-def save_branch_shot_figures(
-    stacks: dict[str, np.ndarray],
-    metadata: dict[str, dict[str, Any]],
-    *,
-    dt: float,
-    dx: float,
-    shots_dir: Path,
-    prefix: str,
-) -> None:
-    first_side = next(iter(stacks))
-    nshot = int(stacks[first_side].shape[0])
-    source_x = np.asarray(metadata[first_side]["shot_source_x_m"]).ravel()
-    for shot in range(nshot):
-        try:
-            cc, x_centers = combine_branches_by_position(
-                stacks, metadata, dx, shot_index=shot
-            )
-        except ValueError as exc:
-            if str(exc) == "No valid receiver traces to plot":
-                continue
-            raise
-        _plot_cc_image(
-            cc, dt, dx, shots_dir / f"{prefix}_shot_{shot:04d}.png",
-            title=f"{prefix} | shot {shot} | {' + '.join(stacks)}",
-            x_centers=x_centers,
-            source_x=float(source_x[shot]),
-        )
-
-
-def save_merged_branch_figure(
-    stacks: dict[str, np.ndarray],
-    metadata: dict[str, dict[str, Any]],
-    *,
-    dt: float,
-    dx: float,
-    out_file: Path,
-    title: str,
-) -> None:
-    merged, x_centers = combine_branches_by_position(stacks, metadata, dx)
-    _plot_cc_image(merged, dt, dx, out_file, title=title, x_centers=x_centers)
-
-
 def save_all_shot_figures(
     stack_data: np.ndarray,
     dt: float,
@@ -604,33 +351,19 @@ def save_all_shot_figures(
     prefix: str,
     x_origin: float = 0.0,
     dshot: float | None = None,
-    receiver_x_m: np.ndarray | None = None,
-    valid_mask: np.ndarray | None = None,
 ) -> None:
     nshot = int(stack_data.shape[0])
     dshot_use = float(dshot) if dshot is not None else float(dx)
     for ishot in range(nshot):
         x_start = float(x_origin) + ishot * dshot_use
         out_file = shots_dir / f"{prefix}_shot_{ishot:04d}.png"
-        cc = np.asarray(stack_data[ishot])
-        shot_x = None
-        if receiver_x_m is not None:
-            shot_x = np.asarray(receiver_x_m)[ishot].ravel()
-            keep = np.isfinite(shot_x)
-            if valid_mask is not None:
-                keep &= np.asarray(valid_mask)[ishot].ravel().astype(bool)
-            if not np.any(keep):
-                continue
-            cc = cc[:, keep]
-            shot_x = shot_x[keep]
         _plot_cc_image(
-            cc,
+            np.asarray(stack_data[ishot]),
             dt,
             dx,
             out_file,
             title=f"{prefix} | shot {ishot}",
             x_start=x_start,
-            x_centers=shot_x,
         )
 
 
@@ -638,32 +371,12 @@ def merge_shots_by_position(
     stack_data: np.ndarray,
     dx: float,
     dshot: float | None,
-    *,
-    receiver_x_m: np.ndarray | None = None,
-    valid_mask: np.ndarray | None = None,
 ) -> tuple[np.ndarray, int]:
-    """Place shots on a distance grid and average overlapping valid traces."""
+    """
+    Place each shot by physical shot spacing and average overlaps.
+    Returns merged_cc (nt, nx_merged) and shot_step_samples.
+    """
     nshot, nt, nx = stack_data.shape
-    if receiver_x_m is not None:
-        positions = np.asarray(receiver_x_m, dtype=float)
-        if positions.shape != (nshot, nx):
-            raise ValueError("receiver_x_m shape must match shot and receiver axes")
-        keep = np.isfinite(positions)
-        if valid_mask is not None:
-            keep &= np.asarray(valid_mask, dtype=bool)
-        if not np.any(keep):
-            raise ValueError("No valid receiver positions to merge")
-        origin = float(np.min(positions[keep]))
-        indices = np.rint((positions[keep] - origin) / float(dx)).astype(int)
-        acc = np.zeros((nt, int(indices.max()) + 1), dtype=np.float64)
-        wgt = np.zeros(indices.max() + 1, dtype=np.int64)
-        for trace, index in zip(np.moveaxis(stack_data, 1, -1)[keep], indices):
-            acc[:, index] += trace
-            wgt[index] += 1
-        merged = np.zeros_like(acc, dtype=np.float32)
-        nonzero = wgt > 0
-        merged[:, nonzero] = (acc[:, nonzero] / wgt[nonzero]).astype(np.float32)
-        return merged, 0
     dshot_use = float(dshot) if dshot is not None else float(dx)
     shot_step = max(1, int(round(dshot_use / float(dx))))
 
@@ -690,24 +403,9 @@ def save_merged_shot_figure(
     *,
     x_origin: float = 0.0,
     dshot: float | None = None,
-    receiver_x_m: np.ndarray | None = None,
-    valid_mask: np.ndarray | None = None,
     title: str = "Merged CC by shot positions",
 ) -> None:
-    merged, shot_step = merge_shots_by_position(
-        stack_data, dx=dx, dshot=dshot,
-        receiver_x_m=receiver_x_m, valid_mask=valid_mask,
-    )
-    if receiver_x_m is not None:
-        positions = np.asarray(receiver_x_m, dtype=float)
-        keep = np.isfinite(positions)
-        if valid_mask is not None:
-            keep &= np.asarray(valid_mask, dtype=bool)
-        _plot_cc_image(
-            merged, dt, dx, out_file, title=title,
-            x_start=float(np.min(positions[keep])),
-        )
-        return
+    merged, shot_step = merge_shots_by_position(stack_data, dx=dx, dshot=dshot)
     dshot_use = float(dshot) if dshot is not None else float(dx)
     effective_dshot = shot_step * float(dx)
     full_title = f"{title} (dshot={dshot_use:.6g}m, effective={effective_dshot:.6g}m)"
@@ -734,12 +432,6 @@ def main() -> None:
         type=str,
         default="cc_stack_group_*.mat",
         help="输入文件匹配模式。",
-    )
-    parser.add_argument(
-        "--receiver-side",
-        choices=("auto", "left", "right", "both"),
-        default="auto",
-        help="双侧 MAT 默认将左右支叠加后保存到同一个 MAT；可只选择一侧。",
     )
     parser.add_argument(
         "--output-dir",
@@ -820,23 +512,6 @@ def main() -> None:
     files = sorted([p for p in input_dir.glob(args.glob) if p.is_file()])
     if not files:
         raise FileNotFoundError(f"No files matched: {input_dir}/{args.glob}")
-    mat_keys = {name for name, _, _ in whosmat(files[0])}
-    branch_sides = [side for side in ("left", "right") if f"data_{side}" in mat_keys]
-    if "data" in mat_keys:
-        if args.receiver_side != "auto":
-            raise ValueError("--receiver-side requires a branch-format MAT input")
-        sides: list[str | None] = [None]
-    elif branch_sides:
-        if args.receiver_side in ("auto", "both"):
-            sides = branch_sides
-            if args.receiver_side == "both" and len(sides) != 2:
-                raise ValueError("--receiver-side both requires data_left and data_right")
-        elif args.receiver_side in branch_sides:
-            sides = [args.receiver_side]
-        else:
-            raise ValueError(f"{files[0].name} has no data_{args.receiver_side}")
-    else:
-        raise ValueError(f"{files[0].name} has no data, data_left, or data_right")
 
     total = len(files)
     start = int(args.start_index)
@@ -859,97 +534,107 @@ def main() -> None:
     print(f"[INFO] cc backend  : {args.cc_backend}")
     print(f"[INFO] cc device   : {args.cc_device}")
     print(f"[INFO] cc dtype    : {args.cc_dtype}")
-    print(f"[INFO] receiver side: {', '.join(side or 'legacy' for side in sides)}")
     print(f"[INFO] summary plot: {bool(args.save_summary_plot)}")
     print(f"[INFO] shot figures: {bool(args.save_shot_figures)}")
 
     saved_items: list[dict[str, Any]] = []
     for i, (w_start, w_end, w_files) in enumerate(windows, start=1):
-        stacks: dict[str, np.ndarray] = {}
-        metadata: dict[str, dict[str, Any]] = {}
+        cc_list: list[np.ndarray] = []
         dt_ref: float | None = None
         dx_ref: float | None = None
         dshot_ref: float | None = None
-        for side in sides:
-            data, dt, dx, dshot, side_meta = stack_window_side(
-                w_files, side,
+        meta_ref: dict[str, Any] | None = None
+        shape_ref: tuple[int, int, int] | None = None
+
+        for f in w_files:
+            cc, dt, dx, dshot, extra_meta = load_cc_mat(f)
+            if dt_ref is None:
+                dt_ref = dt
+                dx_ref = dx
+                dshot_ref = dshot
+                meta_ref = extra_meta
+                shape_ref = cc.shape
+            else:
+                if cc.shape != shape_ref:
+                    raise ValueError(
+                        f"Shape mismatch in window {i}: {f.name}={cc.shape}, ref={shape_ref}"
+                    )
+                if not np.isclose(dt, dt_ref):
+                    raise ValueError(
+                        f"dt mismatch in window {i}: {f.name}={dt}, ref={dt_ref}"
+                    )
+                if not np.isclose(dx, dx_ref):
+                    raise ValueError(
+                        f"dx mismatch in window {i}: {f.name}={dx}, ref={dx_ref}"
+                    )
+            cc_list.append(cc)
+
+        # Stack every shot independently across files.
+        cc_array = np.asarray(cc_list)  # (nfile, nshot, nt, nx)
+        _, nshot, nt, nx = cc_array.shape
+        stack_data = np.zeros((nshot, nt, nx), dtype=cc_array.dtype)
+        for ishot in range(nshot):
+            stack_data[ishot, :, :] = stack_cc_results(
+                [cc_array[k, ishot, :, :] for k in range(cc_array.shape[0])],
+                dt=float(dt_ref),
                 stacking_method=args.stack_method,
                 cc_backend=args.cc_backend,
                 cc_device=args.cc_device,
                 cc_dtype=args.cc_dtype,
             )
-            if dt_ref is None:
-                dt_ref, dx_ref, dshot_ref = dt, dx, dshot
-            elif not np.isclose(dt, dt_ref) or not np.isclose(dx, dx_ref):
-                raise ValueError(f"Left/right dt or dx mismatch in window {i}")
-            elif (dshot is None) != (dshot_ref is None) or (
-                dshot is not None and not np.isclose(dshot, dshot_ref)
-            ):
-                raise ValueError(f"Left/right dshot mismatch in window {i}")
-            key = side or "legacy"
-            stacks[key] = data
-            metadata[key] = side_meta
-
-        if len(sides) == 2:
-            left_meta, right_meta = metadata["left"], metadata["right"]
-            for key in ("shot_index", "shot_source_x_m"):
-                if not np.array_equal(left_meta[key], right_meta[key], equal_nan=True):
-                    raise ValueError(f"Left/right {key} mismatch in window {i}")
 
         stack_size_label = "all" if stack_size is None else str(stack_size)
-        out_mat = output_dir / (
-            f"restack_{i:04d}_n{stack_size_label}_idx{w_start:04d}-{w_end:04d}.mat"
+        out_mat = (
+            output_dir
+            / f"restack_{i:04d}_n{stack_size_label}_idx{w_start:04d}-{w_end:04d}.mat"
         )
-        item: dict[str, Any] = {"start": w_start, "end": w_end, "mat": out_mat}
-        if sides == [None]:
-            save_stack_shots_mat(
-                out_mat, stacks["legacy"], dt=float(dt_ref), dx=float(dx_ref),
-                dshot=dshot_ref, source_files=w_files, extra_meta=metadata["legacy"],
-            )
-            item["data"] = stacks["legacy"]
-        else:
-            save_branch_stack_mat(
-                out_mat, stacks, metadata, dt=float(dt_ref), dx=float(dx_ref),
-                dshot=dshot_ref, source_files=w_files,
-            )
-            item["branches"] = stacks
-            item["metadata"] = metadata
-        saved_items.append(item)
+        save_stack_shots_mat(
+            out_mat,
+            stack_data,
+            dt=float(dt_ref),
+            dx=float(dx_ref),
+            dshot=dshot_ref,
+            source_files=w_files,
+            extra_meta=meta_ref,
+        )
+        saved_items.append(
+            {"data": stack_data, "start": w_start, "end": w_end, "mat": out_mat}
+        )
         print(f"[OK] saved: {out_mat.name}")
 
         if args.save_shot_figures:
-            shots_dir = output_dir / "shots_fig" / out_mat.stem
+            shots_root = output_dir / "shots_fig"
+            shots_dir = shots_root / out_mat.stem
+            x_origin = float(meta_ref.get("xmin", 0.0)) if meta_ref else 0.0
+            save_all_shot_figures(
+                stack_data,
+                dt=float(dt_ref),
+                dx=float(dx_ref),
+                shots_dir=shots_dir,
+                prefix=out_mat.stem,
+                x_origin=x_origin,
+                dshot=dshot_ref,
+            )
             merged_png = shots_dir / f"{out_mat.stem}_merged_by_position.png"
-            if sides == [None]:
-                legacy_meta = metadata["legacy"]
-                x_origin = float(legacy_meta.get("xmin") or 0.0)
-                save_all_shot_figures(
-                    stacks["legacy"], dt=float(dt_ref), dx=float(dx_ref),
-                    shots_dir=shots_dir, prefix=out_mat.stem, x_origin=x_origin,
-                    dshot=dshot_ref,
-                )
-                save_merged_shot_figure(
-                    stacks["legacy"], dt=float(dt_ref), dx=float(dx_ref),
-                    out_file=merged_png, x_origin=x_origin, dshot=dshot_ref,
-                    title=f"{out_mat.stem} merged CC by shot positions",
-                )
-            else:
-                save_branch_shot_figures(
-                    stacks, metadata, dt=float(dt_ref), dx=float(dx_ref),
-                    shots_dir=shots_dir, prefix=out_mat.stem,
-                )
-                save_merged_branch_figure(
-                    stacks, metadata, dt=float(dt_ref), dx=float(dx_ref),
-                    out_file=merged_png,
-                    title=f"{out_mat.stem} merged CC by receiver positions",
-                )
+            save_merged_shot_figure(
+                stack_data,
+                dt=float(dt_ref),
+                dx=float(dx_ref),
+                out_file=merged_png,
+                x_origin=x_origin,
+                dshot=dshot_ref,
+                title=f"{out_mat.stem} merged CC by shot positions",
+            )
             print(f"[OK] shots figs: {shots_dir}")
 
     if args.save_summary_plot:
         plot_file = output_dir / args.plot_name
         plot_stacks(
-            saved_items, dt=float(dt_ref), dx=float(dx_ref),
-            out_file=plot_file, show=bool(args.show),
+            saved_items,
+            dt=float(dt_ref),
+            dx=float(dx_ref),
+            out_file=plot_file,
+            show=bool(args.show),
         )
         print(f"[OK] plot : {plot_file}")
 
